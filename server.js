@@ -27,8 +27,9 @@ const server = http.createServer(app);
 // ══════════════════════════════
 // CONFIGURATION
 // ══════════════════════════════
+process.env.PORT = process.env.PORT || 3000;
 const CONFIG = {
-  PORT          : process.env.PORT || 3000,
+ PORT : Number(process.env.PORT),
   MAX_MSG_LEN   : 500,          // حد أقصى لطول الرسالة
   MAX_MSGS_MIN  : 60,           // حد أقصى للرسائل في الدقيقة
   ALLOWED_ORIGIN: process.env.CLIENT_URL || '*',  // ضع رابط موقعك هنا في الإنتاج
