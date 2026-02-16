@@ -183,6 +183,9 @@ app.get('/api/stats', (req, res) => {
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', ...getStats() });
 });
+app.get('/', (req, res) => {
+  res.send('Server is alive');
+});
 
 // ══════════════════════════════
 // SOCKET.IO EVENTS
