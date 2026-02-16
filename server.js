@@ -27,7 +27,7 @@ const server = http.createServer(app);
 // ══════════════════════════════
 // CONFIGURATION
 // ══════════════════════════════
-process.env.PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 const CONFIG = {
  PORT : Number(process.env.PORT),
   MAX_MSG_LEN   : 500,          // حد أقصى لطول الرسالة
@@ -295,12 +295,13 @@ setInterval(() => {
 // ══════════════════════════════
 // START SERVER
 // ══════════════════════════════
-server.listen(CONFIG.PORT, '0.0.0.0', () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`
   ╔════════════════════════════╗
   ║   مجهول Server — Running   ║
-  ║   Port: ${CONFIG.PORT}               ║
-  ║   http://localhost:${CONFIG.PORT}    ║
+  ║    Port: ${PORT}
+http://localhost:${PORT}              ║
+  ║     ║
   ╚════════════════════════════╝
   `);
 });
