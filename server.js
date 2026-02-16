@@ -12,29 +12,27 @@
  *  - منع الاتصالات المكررة
  */
 
-const express    = require('express');
-const http       = require('http');
+const express = require('express');
+const http = require('http');
 const { Server } = require('socket.io');
-const helmet     = require('helmet');
-const rateLimit  = require('express-rate-limit');
-const cors       = require('cors');
-const { v4: uuid } = require('uuid');
-const path       = require('path');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const cors = require('cors');
+const path = require('path');
 
-const app    = express();
+const app = express();
 const server = http.createServer(app);
 
 // ══════════════════════════════
 // CONFIGURATION
 // ══════════════════════════════
-const PORT = Number(process.env.PORT) || 8080;
 const CONFIG = {
- PORT: PORT,
-  MAX_MSG_LEN   : 500,          // حد أقصى لطول الرسالة
-  MAX_MSGS_MIN  : 60,           // حد أقصى للرسائل في الدقيقة
-  ALLOWED_ORIGIN: process.env.CLIENT_URL || '*',  // ضع رابط موقعك هنا في الإنتاج
-  PING_TIMEOUT  : 20000,
-  PING_INTERVAL : 25000,
+  PORT: Number(process.env.PORT) || 8080,
+  MAX_MSG_LEN: 500, // حد أقصى لطول الرسالة
+  MAX_MSGS_MIN: 60, // حد أقصى للرسائل في الدقيقة
+  ALLOWED_ORIGIN: process.env.CLIENT_URL || '*', // ضع رابط موقعك هنا في الإنتاج
+  PING_TIMEOUT: 20000,
+  PING_INTERVAL: 25000,
 };
 
 // ══════════════════════════════
@@ -42,24 +40,30 @@ const CONFIG = {
 // ══════════════════════════════
 
 // HTTP Headers الأمنية
-app.use(helmet({
-  contentSecurityPolicy: false, // تعطيل إذا تبي تخدم HTML من نفس السيرفر
-}));
+app.use(
+  helmet({
+    contentSecurityPolicy: false, // تعطيل إذا تبي تخدم HTML من نفس السيرفر
+  })
+);
 
 // CORS
-app.use(cors({
-  origin: CONFIG.ALLOWED_ORIGIN,
-  methods: ['GET'],
-}));
+app.use(
+  cors({
+    origin: CONFIG.ALLOWED_ORIGIN,
+    methods: ['GET', 'POST'],
+  })
+);
 
 // Rate Limiting — منع طلبات HTTP المكثفة
-app.use(rateLimit({
-  windowMs : 1 * 60 * 1000, // دقيقة
-  max      : 100,
-  message  : { error: 'طلبات كثيرة جداً، انتظر قليلاً' },
-  standardHeaders: true,
-  legacyHeaders  : false,
-}));
+app.use(
+  rateLimit({
+    windowMs: 1 * 60 * 1000, // دقيقة
+    max: 100,
+    message: { error: 'طلبات كثيرة جداً، انتظر قليلاً' },
+    standardHeaders: true,
+    legacyHeaders: false,
+  })
+);
 
 app.use(express.json({ limit: '10kb' }));
 
@@ -68,38 +72,37 @@ app.use(express.json({ limit: '10kb' }));
 // ══════════════════════════════
 const io = new Server(server, {
   cors: {
-    origin : CONFIG.ALLOWED_ORIGIN,
+    origin: CONFIG.ALLOWED_ORIGIN,
     methods: ['GET', 'POST'],
   },
-  pingTimeout : CONFIG.PING_TIMEOUT,
+  pingTimeout: CONFIG.PING_TIMEOUT,
   pingInterval: CONFIG.PING_INTERVAL,
-  // لا نرسل معلومات إضافية للعميل
   serveClient: false,
 });
 
 // ══════════════════════════════
 // STATE — في الذاكرة فقط (لا قاعدة بيانات)
 // ══════════════════════════════
-const waitingQueue = [];     // قائمة انتظار المستخدمين
-const activePairs  = new Map(); // socketId -> socketId (الأزواج المتصلين)
-const msgCount     = new Map(); // socketId -> { count, resetAt }
+const waitingQueue = []; // قائمة انتظار المستخدمين
+const activePairs = new Map(); // socketId -> socketId (الأزواج المتصلين)
+const msgCount = new Map(); // socketId -> { count, resetAt }
 
 // ══════════════════════════════
 // HELPERS
 // ══════════════════════════════
 
-/** توليد ID مجهول للمستخدم (ليس الـ socket ID) */
+/** توليد ID مجهول للمستخدم */
 function genAnonId() {
   return Math.floor(1000 + Math.random() * 9000).toString();
 }
 
 /** التحقق من Rate Limit للرسائل */
 function checkMsgRate(socketId) {
-  const now  = Date.now();
+  const now = Date.now();
   const data = msgCount.get(socketId) || { count: 0, resetAt: now + 60000 };
 
   if (now > data.resetAt) {
-    data.count   = 0;
+    data.count = 0;
     data.resetAt = now + 60000;
   }
 
@@ -119,19 +122,17 @@ function cleanupUser(socketId) {
   const partnerId = activePairs.get(socketId);
   if (partnerId) {
     const partnerSocket = io.sockets.sockets.get(partnerId);
-    if (partnerSocket) {
-      partnerSocket.emit('partner:left');
-    }
+    if (partnerSocket) partnerSocket.emit('partner:left');
     activePairs.delete(partnerId);
   }
+
   activePairs.delete(socketId);
   msgCount.delete(socketId);
 }
 
 /** مطابقة مستخدمين من قائمة الانتظار */
 function tryMatch(socketId) {
-  // ابحث عن شخص ينتظر (ليس نفس الشخص)
-  const idx = waitingQueue.findIndex(id => id !== socketId);
+  const idx = waitingQueue.findIndex((id) => id !== socketId);
   if (idx === -1) return false;
 
   const partnerId = waitingQueue.splice(idx, 1)[0];
@@ -141,48 +142,44 @@ function tryMatch(socketId) {
   if (myIdx !== -1) waitingQueue.splice(myIdx, 1);
 
   // ربط الزوج
-  activePairs.set(socketId,  partnerId);
+  activePairs.set(socketId, partnerId);
   activePairs.set(partnerId, socketId);
 
-  const myAnonId      = genAnonId();
+  const myAnonId = genAnonId();
   const partnerAnonId = genAnonId();
 
   // إبلاغ كل طرف
-  const mySocket      = io.sockets.sockets.get(socketId);
+  const mySocket = io.sockets.sockets.get(socketId);
   const partnerSocket = io.sockets.sockets.get(partnerId);
 
-  if (mySocket)      mySocket.emit('matched',      { peerId: partnerAnonId });
-  if (partnerSocket) partnerSocket.emit('matched',  { peerId: myAnonId });
+  if (mySocket) mySocket.emit('matched', { peerId: partnerAnonId });
+  if (partnerSocket) partnerSocket.emit('matched', { peerId: myAnonId });
 
-  console.log(`✅ Match: ${socketId.slice(0,6)} <-> ${partnerId.slice(0,6)}`);
+  console.log(`✅ Match: ${socketId.slice(0, 6)} <-> ${partnerId.slice(0, 6)}`);
   return true;
 }
 
 // ══════════════════════════════
-// STATS (لوحة المراقبة)
+// STATS
 // ══════════════════════════════
 function getStats() {
   return {
-    online  : io.sockets.sockets.size,
-    waiting : waitingQueue.length,
+    online: io.sockets.sockets.size,
+    waiting: waitingQueue.length,
     chatting: activePairs.size / 2,
-    uptime  : Math.floor(process.uptime()),
+    uptime: Math.floor(process.uptime()),
   };
 }
 
 // ══════════════════════════════
 // HTTP ROUTES
 // ══════════════════════════════
-
-// خدمة الواجهة الأمامية
 app.use(express.static(path.join(__dirname, 'public')));
 
-// API - إحصائيات عامة (لعرضها في الواجهة)
 app.get('/api/stats', (req, res) => {
   res.json(getStats());
 });
 
-// Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', ...getStats() });
 });
@@ -191,10 +188,9 @@ app.get('/health', (req, res) => {
 // SOCKET.IO EVENTS
 // ══════════════════════════════
 io.on('connection', (socket) => {
-  console.log(`🔗 Connected: ${socket.id.slice(0,8)}... (total: ${io.sockets.sockets.size})`);
+  console.log(`🔗 Connected: ${socket.id.slice(0, 8)}... (total: ${io.sockets.sockets.size})`);
 
-  // ── البحث عن شريك ──
-  socket.on('find:partner', ({ tags = [] } = {}) => {
+  socket.on('find:partner', () => {
     // إذا كان في محادثة، اقطعها أولاً
     const oldPartner = activePairs.get(socket.id);
     if (oldPartner) {
@@ -205,49 +201,38 @@ io.on('connection', (socket) => {
     }
 
     // أضفه لقائمة الانتظار إذا لم يكن فيها
-    if (!waitingQueue.includes(socket.id)) {
-      waitingQueue.push(socket.id);
-    }
+    if (!waitingQueue.includes(socket.id)) waitingQueue.push(socket.id);
 
     // حاول المطابقة
-    if (!tryMatch(socket.id)) {
-      socket.emit('waiting'); // لا يوجد أحد متاح الآن
-    }
+    if (!tryMatch(socket.id)) socket.emit('waiting');
   });
 
-  // ── إرسال رسالة ──
   socket.on('message:send', ({ text } = {}) => {
-    // التحقق من البيانات
     if (typeof text !== 'string') return;
 
-    // تنظيف النص
     const clean = text.trim().slice(0, CONFIG.MAX_MSG_LEN);
     if (!clean) return;
 
-    // Rate limiting
     if (!checkMsgRate(socket.id)) {
       socket.emit('error:ratelimit', { message: 'أرسلت رسائل كثيرة جداً، انتظر قليلاً ⏳' });
       return;
     }
 
-    // إيجاد الشريك
     const partnerId = activePairs.get(socket.id);
     if (!partnerId) {
-      socket.emit('error:noparter', { message: 'لست في محادثة حالياً' });
+      socket.emit('error:nopartner', { message: 'لست في محادثة حالياً' });
       return;
     }
 
     const partnerSocket = io.sockets.sockets.get(partnerId);
     if (!partnerSocket) return;
 
-    // إرسال للشريك فقط — الرسالة لا تُخزن
     partnerSocket.emit('message:receive', {
-      text,
+      text: clean, // نرسل النص المنظّف
       ts: Date.now(),
     });
   });
 
-  // ── مؤشر الكتابة ──
   socket.on('typing:start', () => {
     const partnerId = activePairs.get(socket.id);
     if (!partnerId) return;
@@ -262,7 +247,6 @@ io.on('connection', (socket) => {
     if (ps) ps.emit('typing:stop');
   });
 
-  // ── قطع المحادثة يدوياً ──
   socket.on('chat:end', () => {
     const partnerId = activePairs.get(socket.id);
     if (partnerId) {
@@ -273,15 +257,13 @@ io.on('connection', (socket) => {
     activePairs.delete(socket.id);
   });
 
-  // ── قطع الاتصال ──
   socket.on('disconnect', (reason) => {
-    console.log(`❌ Disconnected: ${socket.id.slice(0,8)}... reason: ${reason}`);
+    console.log(`❌ Disconnected: ${socket.id.slice(0, 8)}... reason: ${reason}`);
     cleanupUser(socket.id);
   });
 
-  // ── خطأ ──
   socket.on('error', (err) => {
-    console.error(`⚠️ Socket error ${socket.id.slice(0,8)}:`, err.message);
+    console.error(`⚠️ Socket error ${socket.id.slice(0, 8)}:`, err?.message || err);
   });
 });
 
@@ -297,14 +279,12 @@ setInterval(() => {
 // ══════════════════════════════
 server.listen(CONFIG.PORT, '0.0.0.0', () => {
   console.log(`
-  ╔════════════════════════════╗
-  ║   مجهول Server — Running   ║
-  ║    Port: ${CONFIG.PORT}
-  http://localhost:${CONFIG.PORT}
-                               ║
-  ║                            ║
-  ╚════════════════════════════╝
-  `);
+╔══════════════════════════════╗
+║   مجهول Server — Running     ║
+║   Port: ${CONFIG.PORT}               ║
+║   http://localhost:${CONFIG.PORT}    ║
+╚══════════════════════════════╝
+`);
 });
 
 // Graceful shutdown
