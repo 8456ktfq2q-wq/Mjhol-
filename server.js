@@ -294,7 +294,7 @@ setInterval(() => {
 // ══════════════════════════════
 // START SERVER
 // ══════════════════════════════
-server.listen(CONFIG.PORT, () => {
+server.listen(CONFIG.PORT, '0.0.0.0', () => {
   console.log(`
   ╔════════════════════════════╗
   ║   مجهول Server — Running   ║
