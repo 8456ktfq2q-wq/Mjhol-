@@ -295,13 +295,14 @@ setInterval(() => {
 // ══════════════════════════════
 // START SERVER
 // ══════════════════════════════
-server.listen(PORT, '0.0.0.0', () => {
+server.listen(CONFIG.PORT, '0.0.0.0', () => {
   console.log(`
   ╔════════════════════════════╗
   ║   مجهول Server — Running   ║
-  ║    Port: ${PORT}
-http://localhost:${PORT}              ║
-  ║     ║
+  ║    Port: ${CONFIG.PORT}
+  http://localhost:${CONFIG.PORT}
+                               ║
+  ║                            ║
   ╚════════════════════════════╝
   `);
 });
