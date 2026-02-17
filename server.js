@@ -1,15 +1,6 @@
 /**
  * مجهول — Anonymous Chat Server
  * Node.js + Socket.io
- * ───────────────────────────────
- * الحماية:
- *  - Helmet (HTTP security headers)
- *  - Rate Limiting (منع السبام)
- *  - CORS محدود
- *  - لا تخزين للرسائل
- *  - لا IP يُكشف
- *  - حد أقصى لطول الرسالة
- *  - منع الاتصالات المكررة
  */
 
 const express = require('express');
@@ -23,33 +14,24 @@ const path = require('path');
 const app = express();
 const server = http.createServer(app);
 
-// Railway يعطي PORT ديناميكي — لازم نستخدمه
+// Railway يعطي PORT جاهز
 const PORT = Number(process.env.PORT) || 8080;
 
-// ══════════════════════════════
-// CONFIGURATION
-// ══════════════════════════════
 const CONFIG = {
-  PORT,
-  MAX_MSG_LEN: 500, // حد أقصى لطول الرسالة
-  MAX_MSGS_MIN: 60, // حد أقصى للرسائل في الدقيقة
-  ALLOWED_ORIGIN: process.env.CLIENT_URL || '*', // ضع رابط موقعك هنا في الإنتاج
+  MAX_MSG_LEN: 500,
+  MAX_MSGS_MIN: 60,
+  ALLOWED_ORIGIN: process.env.CLIENT_URL || '*',
   PING_TIMEOUT: 20000,
   PING_INTERVAL: 25000,
 };
 
-// ══════════════════════════════
-// SECURITY MIDDLEWARE
-// ══════════════════════════════
-
-// HTTP Headers الأمنية
+// SECURITY
 app.use(
   helmet({
     contentSecurityPolicy: false,
   })
 );
 
-// CORS
 app.use(
   cors({
     origin: CONFIG.ALLOWED_ORIGIN,
@@ -57,10 +39,9 @@ app.use(
   })
 );
 
-// Rate Limiting — منع طلبات HTTP المكثفة
 app.use(
   rateLimit({
-    windowMs: 1 * 60 * 1000, // دقيقة
+    windowMs: 1 * 60 * 1000,
     max: 100,
     message: { error: 'طلبات كثيرة جداً، انتظر قليلاً' },
     standardHeaders: true,
@@ -70,9 +51,7 @@ app.use(
 
 app.use(express.json({ limit: '10kb' }));
 
-// ══════════════════════════════
-// SOCKET.IO SETUP
-// ══════════════════════════════
+// SOCKET.IO
 const io = new Server(server, {
   cors: {
     origin: CONFIG.ALLOWED_ORIGIN,
@@ -83,17 +62,12 @@ const io = new Server(server, {
   serveClient: false,
 });
 
-// ══════════════════════════════
-// STATE — في الذاكرة فقط
-// ══════════════════════════════
-const waitingQueue = []; // قائمة انتظار المستخدمين
-const activePairs = new Map(); // socketId -> socketId
-const msgCount = new Map(); // socketId -> { count, resetAt }
+// STATE
+const waitingQueue = [];
+const activePairs = new Map();
+const msgCount = new Map();
 
-// ══════════════════════════════
 // HELPERS
-// ══════════════════════════════
-
 function genAnonId() {
   return Math.floor(1000 + Math.random() * 9000).toString();
 }
@@ -109,16 +83,13 @@ function checkMsgRate(socketId) {
 
   data.count++;
   msgCount.set(socketId, data);
-
   return data.count <= CONFIG.MAX_MSGS_MIN;
 }
 
 function cleanupUser(socketId) {
-  // إزالة من قائمة الانتظار
   const idx = waitingQueue.indexOf(socketId);
   if (idx !== -1) waitingQueue.splice(idx, 1);
 
-  // إبلاغ الشريك (إن وجد)
   const partnerId = activePairs.get(socketId);
   if (partnerId) {
     const partnerSocket = io.sockets.sockets.get(partnerId);
@@ -136,11 +107,9 @@ function tryMatch(socketId) {
 
   const partnerId = waitingQueue.splice(idx, 1)[0];
 
-  // إزالة المستخدم الحالي من الانتظار إذا كان موجود
   const myIdx = waitingQueue.indexOf(socketId);
   if (myIdx !== -1) waitingQueue.splice(myIdx, 1);
 
-  // ربط الزوج
   activePairs.set(socketId, partnerId);
   activePairs.set(partnerId, socketId);
 
@@ -157,9 +126,6 @@ function tryMatch(socketId) {
   return true;
 }
 
-// ══════════════════════════════
-// STATS
-// ══════════════════════════════
 function getStats() {
   return {
     online: io.sockets.sockets.size,
@@ -169,30 +135,19 @@ function getStats() {
   };
 }
 
-// ══════════════════════════════
-// HTTP ROUTES
-// ══════════════════════════════
+// ROUTES
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.get('/api/stats', (req, res) => {
-  res.json(getStats());
-});
+app.get('/api/stats', (req, res) => res.json(getStats()));
+app.get('/health', (req, res) => res.json({ status: 'ok', ...getStats() }));
 
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', ...getStats() });
-});
+// مهم جداً لـ Railway
+app.get('/', (req, res) => res.status(200).send('OK'));
 
-app.get('/', (req, res) => {
-  res.send('Server is alive ✅');
-});
-
-// ══════════════════════════════
-// SOCKET.IO EVENTS
-// ══════════════════════════════
+// SOCKET EVENTS
 io.on('connection', (socket) => {
-  console.log(`🔗 Connected: ${socket.id.slice(0, 8)}... (total: ${io.sockets.sockets.size})`);
+  console.log(`🔗 Connected: ${socket.id.slice(0, 8)}...`);
 
-  // البحث عن شريك
   socket.on('find:partner', () => {
     const oldPartner = activePairs.get(socket.id);
     if (oldPartner) {
@@ -207,7 +162,6 @@ io.on('connection', (socket) => {
     if (!tryMatch(socket.id)) socket.emit('waiting');
   });
 
-  // إرسال رسالة
   socket.on('message:send', ({ text } = {}) => {
     if (typeof text !== 'string') return;
 
@@ -228,13 +182,9 @@ io.on('connection', (socket) => {
     const partnerSocket = io.sockets.sockets.get(partnerId);
     if (!partnerSocket) return;
 
-    partnerSocket.emit('message:receive', {
-      text: clean,
-      ts: Date.now(),
-    });
+    partnerSocket.emit('message:receive', { text: clean, ts: Date.now() });
   });
 
-  // مؤشر الكتابة
   socket.on('typing:start', () => {
     const partnerId = activePairs.get(socket.id);
     if (!partnerId) return;
@@ -249,7 +199,6 @@ io.on('connection', (socket) => {
     if (ps) ps.emit('typing:stop');
   });
 
-  // إنهاء المحادثة
   socket.on('chat:end', () => {
     const partnerId = activePairs.get(socket.id);
     if (partnerId) {
@@ -260,7 +209,6 @@ io.on('connection', (socket) => {
     activePairs.delete(socket.id);
   });
 
-  // قطع الاتصال
   socket.on('disconnect', (reason) => {
     console.log(`❌ Disconnected: ${socket.id.slice(0, 8)}... reason: ${reason}`);
     cleanupUser(socket.id);
@@ -271,15 +219,13 @@ io.on('connection', (socket) => {
   });
 });
 
-// بث الإحصائيات كل 5 ثواني
+// STATS BROADCAST
 setInterval(() => {
   io.emit('stats:update', getStats());
 }, 5000);
 
-// ══════════════════════════════
-// START SERVER (Railway-friendly)
-// ══════════════════════════════
-server.listen(PORT, "0.0.0.0", () => {
+// START SERVER
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Server listening on PORT=${PORT}`);
 });
 
