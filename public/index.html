@@ -1,82 +1,577 @@
-<!DOCTYPE html>
+<!DOCTYPE >
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>مجهول+</title>
 
-<title>مجهول +</title>
+  <!-- ✅ PWA (تطبيق على iPhone/Android) -->
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#6d28d9">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="مجهول+">
+  <link rel="apple-touch-icon" href="/icon-192.png">
 
-<!-- PWA -->
-<link rel="manifest" href="/manifest.webmanifest">
-<meta name="theme-color" content="#6d28d9">
+  <!-- ✅ Socket.io client -->
+  <script src="/socket.io/socket.io.js"></script>
 
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="مجهول +">
-<link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;700;800;900&display=swap" rel="stylesheet">
 
-<!-- Socket -->
-<script src="/socket.io/socket.io.js"></script>
+  <style>
+    :root{
+      --bg:#03020a;
+      --bg2:#07061a;
+      --card:rgba(255,255,255,.06);
+      --cardb:rgba(255,255,255,.10);
+      --text:#f3f2ff;
+      --sub:#b9b6d4;
+      --muted:#7b77a5;
+      --accent:#6d28d9;
+      --accent2:#8b5cf6;
+      --ok:#10b981;
+      --bad:#f43f5e;
+      --r:22px;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:"Tajawal",system-ui;
+      color:var(--text);
+      background:
+        radial-gradient(900px 600px at 85% -10%, rgba(139,92,246,.35), transparent 60%),
+        radial-gradient(800px 500px at 10% 110%, rgba(6,182,212,.18), transparent 60%),
+        linear-gradient(180deg,var(--bg2),var(--bg));
+      min-height:100vh;
+      overflow:hidden;
+    }
 
-<style>
-body{
-  margin:0;
-  font-family:system-ui;
-  background:#03020a;
-  color:white;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  height:100vh;
-}
+    /* stars */
+    .stars{
+      position:fixed; inset:0; pointer-events:none; opacity:.55;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(255,255,255,.10) 0 1px, transparent 2px),
+        radial-gradient(circle at 60% 30%, rgba(255,255,255,.08) 0 1px, transparent 2px),
+        radial-gradient(circle at 30% 80%, rgba(255,255,255,.06) 0 1px, transparent 2px);
+      background-size:240px 240px;
+      filter: blur(.2px);
+    }
 
-button{
-  background:linear-gradient(135deg,#6d28d9,#9333ea);
-  border:none;
-  padding:18px 40px;
-  border-radius:40px;
-  color:white;
-  font-size:20px;
-}
+    .wrap{
+      position:relative; z-index:2;
+      max-width:520px; margin:0 auto;
+      padding:18px 14px calc(18px + env(safe-area-inset-bottom));
+    }
 
-#status{
-  margin-top:20px;
-  opacity:.7;
-}
-</style>
+    .top{
+      padding-top:calc(10px + env(safe-area-inset-top));
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+    }
+    .brand{display:flex; align-items:center; gap:10px}
+    .logo{
+      width:42px;height:42px;border-radius:14px;
+      background:linear-gradient(135deg,var(--accent),var(--accent2));
+      display:grid;place-items:center;
+      box-shadow:0 10px 30px rgba(109,40,217,.45);
+      font-size:18px;
+    }
+    .title{font-weight:900; font-size:18px}
+    .pill{
+      font-size:12px; color:rgba(255,255,255,.9);
+      padding:6px 10px; border-radius:999px;
+      background:rgba(109,40,217,.18);
+      border:1px solid rgba(139,92,246,.35);
+      white-space:nowrap;
+    }
+
+    .card{
+      margin-top:16px;
+      background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03));
+      border:1px solid var(--cardb);
+      border-radius:var(--r);
+      backdrop-filter: blur(16px);
+      overflow:hidden;
+    }
+
+    .hero{padding:22px 18px 14px; text-align:center}
+    .hero h1{
+      font-size:56px; line-height:1; font-weight:900;
+      background:linear-gradient(155deg,#fff 0%, rgba(167,139,250,1) 45%, rgba(6,182,212,1) 100%);
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      background-clip:text;
+    }
+    .hero p{margin-top:10px;color:var(--sub);line-height:1.6}
+
+    .stats{
+      display:grid; grid-template-columns:repeat(3,1fr);
+      gap:10px; padding:0 14px 16px;
+    }
+    .stat{
+      background:rgba(0,0,0,.18);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:16px;
+      padding:12px 10px;
+      text-align:center;
+    }
+    .stat .n{font-size:22px;font-weight:900;color:rgba(167,139,250,1)}
+    .stat .l{font-size:12px;color:var(--muted);margin-top:3px}
+
+    .tags{padding:0 14px 16px}
+    .tags .lab{font-size:12px;color:var(--muted);text-align:center;margin-bottom:10px}
+    .grid{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+    .tag{
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.04);
+      padding:10px 14px;border-radius:999px;
+      color:var(--sub); font-weight:700;
+      cursor:pointer; user-select:none;
+      transition:.15s;
+    }
+    .tag.active{
+      border-color:rgba(139,92,246,.55);
+      background:rgba(109,40,217,.22);
+      color:#fff;
+      transform:translateY(-1px);
+      box-shadow:0 10px 26px rgba(109,40,217,.22);
+    }
+
+    .actions{padding:0 14px 18px; display:flex; flex-direction:column; gap:10px}
+    .btn{
+      border:0; border-radius:18px;
+      padding:14px 16px;
+      font-weight:900; font-size:16px;
+      color:#fff;
+      background:linear-gradient(135deg,var(--accent),#9333ea,var(--accent2));
+      box-shadow:0 16px 44px rgba(109,40,217,.38);
+      cursor:pointer;
+    }
+    .btn:active{transform:scale(.98)}
+    .btn2{
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.12);
+      color:var(--sub);
+      box-shadow:none;
+    }
+
+    .mini{
+      padding:0 2px;
+      display:flex; justify-content:space-between; align-items:center;
+      color:var(--muted); font-size:12px;
+    }
+
+    /* Toast */
+    .toast{
+      position:fixed; top:14px; left:50%; transform:translateX(-50%);
+      background:rgba(10,8,22,.92);
+      border:1px solid rgba(255,255,255,.14);
+      padding:10px 14px; border-radius:999px;
+      color:#fff; font-size:13px;
+      display:none; z-index:2000;
+      max-width:92vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      backdrop-filter: blur(14px);
+    }
+    .toast.show{display:block}
+
+    /* Matching overlay */
+    .overlay{
+      position:fixed; inset:0; background:rgba(0,0,0,.55);
+      display:none; align-items:center; justify-content:center; z-index:999;
+      padding:18px;
+    }
+    .overlay.show{display:flex}
+    .mcard{
+      width:min(520px,100%);
+      background:rgba(10,8,22,.92);
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:26px;
+      padding:22px;
+      text-align:center;
+      backdrop-filter: blur(16px);
+    }
+    .ring{
+      width:120px;height:120px;border-radius:50%;
+      margin:0 auto 16px;
+      background:conic-gradient(from 0deg, rgba(139,92,246,0), rgba(139,92,246,.75), rgba(6,182,212,.65), rgba(139,92,246,0));
+      mask: radial-gradient(circle, transparent 55%, #000 56%);
+      animation:spin 1.4s linear infinite;
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* Chat */
+    .chat{
+      position:fixed; inset:0; z-index:50;
+      background:linear-gradient(180deg, rgba(3,2,10,.96), rgba(3,2,10,.90));
+      display:none; flex-direction:column;
+    }
+    .chat.show{display:flex}
+    .chTop{
+      padding:14px 14px 10px;
+      padding-top:calc(12px + env(safe-area-inset-top));
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      border-bottom:1px solid rgba(255,255,255,.10);
+      backdrop-filter: blur(16px);
+    }
+    .peer{display:flex; align-items:center; gap:10px}
+    .ava{
+      width:42px;height:42px;border-radius:16px;
+      background:linear-gradient(135deg,var(--accent),var(--accent2));
+      display:grid;place-items:center;font-size:18px;
+      box-shadow:0 10px 30px rgba(109,40,217,.40);
+    }
+    .pname{font-weight:900}
+    .pstat{font-size:12px;color:var(--sub);margin-top:2px}
+    .hb{
+      width:40px;height:40px;border-radius:14px;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.10);
+      color:#fff;font-size:16px;
+      display:grid;place-items:center;
+      cursor:pointer;
+    }
+    .hb.red{border-color:rgba(244,63,94,.35)}
+    .hb.red:active{background:rgba(244,63,94,.15)}
+
+    #msgs{
+      flex:1; overflow-y:auto; padding:16px 14px;
+      display:flex; flex-direction:column; gap:10px;
+    }
+    .sys{
+      align-self:center;
+      font-size:12px;
+      color:var(--muted);
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.08);
+      padding:8px 12px;
+      border-radius:999px;
+    }
+    .row{display:flex; max-width:85%}
+    .row.me{align-self:flex-end; justify-content:flex-end}
+    .row.them{align-self:flex-start}
+    .bubble{
+      padding:10px 12px;
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.05);
+      color:#fff;
+      line-height:1.6;
+      word-break:break-word;
+    }
+    .me .bubble{
+      background:linear-gradient(135deg,var(--accent),#9333ea);
+      border:0;
+    }
+    .time{font-size:11px;color:var(--muted);margin-top:4px}
+
+    .foot{
+      padding:12px 14px;
+      padding-bottom:calc(12px + env(safe-area-inset-bottom));
+      border-top:1px solid rgba(255,255,255,.10);
+      backdrop-filter: blur(16px);
+      background:rgba(3,2,10,.92);
+    }
+    .inRow{display:flex; gap:10px; align-items:flex-end}
+    textarea{
+      flex:1;
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.06);
+      color:#fff;
+      padding:10px 12px;
+      font-family:"Tajawal";
+      font-size:15px;
+      outline:none;
+      resize:none;
+      max-height:120px;
+    }
+    textarea::placeholder{color:rgba(185,182,212,.7)}
+    .send{
+      width:44px;height:44px;border-radius:16px;border:0;
+      background:linear-gradient(135deg,var(--accent),var(--accent2));
+      color:#fff;font-size:16px;font-weight:900;
+      cursor:pointer;
+    }
+  </style>
 </head>
 
 <body>
+  <div class="stars"></div>
 
-<div style="text-align:center">
-  <h1>مجهول +</h1>
-  <button onclick="start()">ابدأ المحادثة</button>
-  <div id="status">غير متصل</div>
-</div>
+  <!-- Landing -->
+  <div class="wrap" id="landing">
+    <div class="top">
+      <div class="brand">
+        <div class="logo">👤</div>
+        <div>
+          <div class="title">مجهول+</div>
+          <div style="font-size:12px;color:var(--muted)">دردشة فورية بدون حساب</div>
+        </div>
+      </div>
+      <div class="pill" id="connPill">🟡 جاري الاتصال…</div>
+    </div>
+
+    <div class="card">
+      <div class="hero">
+        <h1>مجهول<span style="color:rgba(6,182,212,1)">+</span></h1>
+        <p>تحدث مع غريب الآن — بلا تسجيل، بلا بيانات، وبشكل فوري.</p>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><div class="n" id="stat-online">—</div><div class="l">متصل الآن</div></div>
+        <div class="stat"><div class="n" id="stat-chatting">—</div><div class="l">في دردشة</div></div>
+        <div class="stat"><div class="n">∞</div><div class="l">خصوصية</div></div>
+      </div>
+
+      <div class="tags">
+        <div class="lab">اختر اهتماماتك (اختياري)</div>
+        <div class="grid">
+          <div class="tag" onclick="toggleTag(this)">🎮 ألعاب</div>
+          <div class="tag" onclick="toggleTag(this)">🎵 موسيقى</div>
+          <div class="tag" onclick="toggleTag(this)">📚 كتب</div>
+          <div class="tag" onclick="toggleTag(this)">🎬 أفلام</div>
+          <div class="tag" onclick="toggleTag(this)">💻 تقنية</div>
+          <div class="tag" onclick="toggleTag(this)">⚽ رياضة</div>
+          <div class="tag" onclick="toggleTag(this)">🎨 فن</div>
+          <div class="tag" onclick="toggleTag(this)">✈️ سفر</div>
+          <div class="tag" onclick="toggleTag(this)">🍕 طعام</div>
+          <div class="tag" onclick="toggleTag(this)">🧠 فلسفة</div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn" onclick="goMatching()">ابدأ المحادثة</button>
+        <button class="btn btn2" onclick="showToast('🔒 لا تسجيل • لا تخزين • مجهول تمامًا')">الخصوصية</button>
+        <div class="mini">
+          <span>🔒 لا تسجيل</span>
+          <span>⚡ فوري</span>
+          <span>🫥 مجهول</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Matching overlay -->
+  <div class="overlay" id="overlay">
+    <div class="mcard">
+      <div class="ring"></div>
+      <h2>نبحث لك…</h2>
+      <p id="mtext">جاري البحث عن شخص متصل</p>
+      <div style="margin-top:14px">
+        <button class="btn btn2" onclick="cancelMatch()">إلغاء</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat -->
+  <div class="chat" id="chat">
+    <div class="chTop">
+      <div class="peer">
+        <div class="ava" id="peerEmoji">👤</div>
+        <div>
+          <div class="pname">مجهول <span style="color:rgba(167,139,250,1)" id="peerNum">#0000</span></div>
+          <div class="pstat" id="peerStat">⚡ متصل الآن</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px">
+        <button class="hb" onclick="goNext()">🔀</button>
+        <button class="hb red" onclick="endChat()">✕</button>
+      </div>
+    </div>
+
+    <div id="msgs">
+      <div class="sys">🔒 محادثة خاصة — لا تخزين للرسائل</div>
+    </div>
+
+    <div class="foot">
+      <div class="inRow">
+        <textarea id="input" placeholder="اكتب رسالتك…" rows="1" oninput="autoGrow(this)" onkeydown="handleKey(event)"></textarea>
+        <button class="send" onclick="sendMsg()">➤</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
 
 <script>
-const socket = io();
+  // ✅ Socket.io مضبوط iOS/PWA
+  const socket = io({
+    path: "/socket.io",
+    transports: ["polling", "websocket"],
+    upgrade: true,
+    reconnection: true,
+    reconnectionAttempts: 10,
+    reconnectionDelay: 1000,
+    timeout: 20000
+  });
 
-socket.on("connect",()=>{
-  document.getElementById("status").innerText="متصل بالسيرفر";
-});
+  const connPill = document.getElementById("connPill");
+  const overlay = document.getElementById("overlay");
+  const chat = document.getElementById("chat");
+  const msgs = document.getElementById("msgs");
 
-socket.on("disconnect",()=>{
-  document.getElementById("status").innerText="انقطع الاتصال";
-});
+  let state = "landing";
+  let matchTimer = null;
 
-function start(){
-  alert("تم الضغط — الآن نكمل بناء التطبيق");
-}
-</script>
+  function showToast(t, ms=2600){
+    const el=document.getElementById("toast");
+    el.textContent=t;
+    el.classList.add("show");
+    setTimeout(()=>el.classList.remove("show"), ms);
+  }
 
-<!-- SERVICE WORKER -->
-<script>
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("/sw.js");
-}
+  socket.on("connect", ()=>{
+    connPill.textContent = "🟢 متصل";
+    connPill.style.borderColor = "rgba(16,185,129,.45)";
+    fetchStats();
+  });
+
+  socket.on("disconnect", ()=>{
+    connPill.textContent = "🔴 انقطع الاتصال";
+    connPill.style.borderColor = "rgba(244,63,94,.45)";
+  });
+
+  socket.on("connect_error", ()=>{
+    connPill.textContent = "🟡 مشكلة اتصال";
+    connPill.style.borderColor = "rgba(244,63,94,.45)";
+  });
+
+  socket.on("stats:update", (d)=>{
+    const o=document.getElementById("stat-online");
+    const c=document.getElementById("stat-chatting");
+    if(o) o.textContent = d.online ?? 0;
+    if(c) c.textContent = d.chatting ?? 0;
+  });
+
+  async function fetchStats(){
+    try{
+      const r = await fetch("/api/stats");
+      const d = await r.json();
+      document.getElementById("stat-online").textContent = d.online ?? 0;
+      document.getElementById("stat-chatting").textContent = d.chatting ?? 0;
+    }catch(e){}
+  }
+
+  function toggleTag(el){ el.classList.toggle("active"); }
+  function getTags(){
+    return [...document.querySelectorAll(".tag.active")].map(x=>x.textContent.trim());
+  }
+
+  function goMatching(){
+    overlay.classList.add("show");
+    state = "matching";
+    const texts = ["جاري البحث عن شخص متصل…","نبحث بين المتصلين…","شارفنا نلقاه…"];
+    let i=0;
+    const mtext=document.getElementById("mtext");
+    clearInterval(matchTimer);
+    matchTimer = setInterval(()=>{
+      i=(i+1)%texts.length;
+      mtext.textContent = texts[i];
+    }, 1200);
+
+    socket.emit("find:partner", { tags: getTags() });
+  }
+
+  function cancelMatch(){
+    overlay.classList.remove("show");
+    state="landing";
+    clearInterval(matchTimer);
+    socket.emit("chat:end");
+    showToast("تم الإلغاء");
+  }
+
+  socket.on("waiting", ()=>{
+    document.getElementById("mtext").textContent = "في قائمة الانتظار… ⏳";
+  });
+
+  socket.on("matched", ({ peerId })=>{
+    clearInterval(matchTimer);
+    overlay.classList.remove("show");
+    openChat(peerId);
+  });
+
+  socket.on("partner:left", ()=>{
+    showToast("👋 الطرف الآخر غادر");
+    document.getElementById("peerStat").textContent = "غير متصل";
+  });
+
+  socket.on("message:receive", ({ text })=>{
+    addMsg("them", String(text||""));
+  });
+
+  function openChat(peerId){
+    state="chat";
+    chat.classList.add("show");
+    msgs.innerHTML = '<div class="sys">🔒 محادثة خاصة — لا تخزين للرسائل</div>';
+    document.getElementById("peerNum").textContent = "#" + (peerId || "0000");
+    document.getElementById("peerStat").textContent = "⚡ متصل الآن";
+    showToast("🟢 تم الاتصال");
+    setTimeout(()=>document.getElementById("input").focus(), 350);
+  }
+
+  function goNext(){
+    showToast("🔀 نبحث عن شخص جديد…");
+    socket.emit("find:partner", { tags: getTags() });
+    overlay.classList.add("show");
+    state="matching";
+  }
+
+  function endChat(){
+    socket.emit("chat:end");
+    chat.classList.remove("show");
+    overlay.classList.remove("show");
+    state="landing";
+    clearInterval(matchTimer);
+  }
+
+  function addMsg(who, text){
+    const row = document.createElement("div");
+    row.className = "row " + (who === "me" ? "me" : "them");
+
+    const bub = document.createElement("div");
+    bub.className = "bubble";
+    bub.textContent = text;
+
+    const time = document.createElement("div");
+    time.className = "time";
+    time.textContent = new Date().toLocaleTimeString("ar-SA",{hour:"2-digit",minute:"2-digit"});
+
+    const wrap = document.createElement("div");
+    wrap.appendChild(bub);
+    wrap.appendChild(time);
+
+    row.appendChild(wrap);
+    msgs.appendChild(row);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function sendMsg(){
+    const input = document.getElementById("input");
+    const txt = input.value.trim();
+    if(!txt) return;
+    socket.emit("message:send", { text: txt });
+    addMsg("me", txt);
+    input.value = "";
+    autoGrow(input);
+  }
+
+  function handleKey(e){
+    if(e.key === "Enter" && !e.shiftKey){
+      e.preventDefault();
+      sendMsg();
+    }
+  }
+
+  function autoGrow(el){
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 120) + "px";
+  }
+
+  // ✅ Register Service Worker
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/sw.js").catch(()=>{});
+  }
 </script>
 
 </body>
