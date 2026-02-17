@@ -3,812 +3,443 @@ html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>مجهول+</title>
-
-  <!-- ✅ PWA (ملف واحد PNG) -->
-  <link rel="manifest" href="/manifest.webmanifest">
-  <meta name="theme-color" content="#7c3aed" />
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="مجهول+">
-  <link rel="apple-touch-icon" href="/icon.png">
-
-  <!-- Socket.io -->
-  <script src="/socket.io/socket.io.js"></script>
-
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="مجهول+ | دردش مع غرباء بشكل مجهول تام" />
+  <meta name="theme-color" content="#1a0a2e" />
+  <title>مجهول+ | دردش بلا هوية</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👤</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet" />
 
   <style>
-    :root{
-      --bg:#06040f; --bg2:#0b0720;
-      --card:rgba(255,255,255,.06); --card2:rgba(255,255,255,.09);
-      --text:#f3f2ff; --muted:#a7a3c7;
-      --p:#7c3aed; --p2:#a78bfa; --g:#22c55e; --r:#ef4444; --c:#06b6d4;
-      --shadow: 0 18px 60px rgba(0,0,0,.45);
-    }
-    [data-theme="light"]{
-      --bg:#f6f5ff; --bg2:#eeeaff;
-      --card:rgba(0,0,0,.05); --card2:rgba(0,0,0,.08);
-      --text:#1b1734; --muted:#5b567a;
-      --shadow: 0 18px 60px rgba(0,0,0,.12);
-    }
-    *{box-sizing:border-box;margin:0;padding:0}
-    html,body{height:100%}
-    body{
-      font-family:'Tajawal',system-ui,-apple-system,Segoe UI,Arial;
-      background: radial-gradient(1200px 700px at 20% -10%, rgba(124,58,237,.35), transparent 60%),
-                  radial-gradient(900px 600px at 90% 0%, rgba(6,182,212,.18), transparent 60%),
-                  linear-gradient(180deg,var(--bg2),var(--bg));
-      color:var(--text);
-      overflow:hidden;
+    :root {
+      --bg:       #0d0618;
+      --card-bg:  rgba(30,15,60,0.88);
+      --purple:   #7c3aed;
+      --purple-l: #c4b5fd;
+      --border:   rgba(139,92,246,0.22);
+      --pink:     #ec4899;
+      --cyan:     #22d3ee;
+      --green:    #34d399;
+      --red:      #f87171;
+      --t1:       #f1f5f9;
+      --t2:       #94a3b8;
     }
 
-    /* خلفية نجوم */
-    #stars{position:fixed;inset:0;z-index:0;opacity:.8}
-    [data-theme="light"] #stars{opacity:.15}
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    .grain{
-      position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.03;
-      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23n)'/%3E%3C/svg%3E");
-      animation: g 0.55s steps(2) infinite;
-    }
-    @keyframes g{0%{transform:translate(0,0)}25%{transform:translate(-2px,2px)}50%{transform:translate(2px,-2px)}75%{transform:translate(-2px,-1px)}100%{transform:translate(2px,2px)}}
-
-    .app{
-      position:relative;z-index:2;height:100%;
-      display:flex;flex-direction:column;
+    body {
+      font-family: 'Tajawal', sans-serif;
+      background: var(--bg);
+      color: var(--t1);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
     }
 
-    /* زر الثيم */
-    .theme-btn{
-      position:fixed;top:12px;left:12px;z-index:50;
-      width:44px;height:44px;border-radius:999px;
-      border:1px solid var(--card2);background:var(--card);
-      color:var(--text);display:flex;align-items:center;justify-content:center;
-      backdrop-filter: blur(16px);
-      cursor:pointer;box-shadow:var(--shadow);
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 70% 60% at 15% 10%, rgba(124,58,237,.35) 0%, transparent 60%),
+        radial-gradient(ellipse 55% 50% at 85% 85%, rgba(34,211,238,.12) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 70% at 50% 100%, rgba(236,72,153,.1) 0%, transparent 60%);
+      animation: bgPulse 7s ease-in-out infinite alternate;
+      pointer-events: none; z-index: 0;
+    }
+    @keyframes bgPulse { from{opacity:.6} to{opacity:1} }
+
+    .stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+    .star {
+      position: absolute; background: #fff; border-radius: 50%;
+      animation: twinkle var(--d) ease-in-out infinite;
+    }
+    @keyframes twinkle { 0%,100%{opacity:.1;transform:scale(1)} 50%{opacity:.7;transform:scale(1.4)} }
+
+    /* CARD */
+    .card {
+      position: relative; z-index: 10;
+      width: 100%; max-width: 380px;
+      margin: 20px 16px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      padding: 28px 20px 24px;
+      backdrop-filter: blur(24px);
+      box-shadow: 0 30px 70px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.06);
+      animation: cardIn .65s cubic-bezier(.34,1.56,.64,1) both;
+    }
+    @keyframes cardIn {
+      from{opacity:0;transform:translateY(30px) scale(.95)}
+      to{opacity:1;transform:translateY(0) scale(1)}
     }
 
-    /* شاشات */
-    .screen{display:none;height:100%}
-    .screen.active{display:flex}
+    /* AVATAR */
+    .avatar-wrap { display:flex; flex-direction:column; align-items:center; gap:10px; margin-bottom:20px; }
+    .avatar-ring { position:relative; width:82px; height:82px; }
+    .avatar-ring::before {
+      content:''; position:absolute; inset:-3px; border-radius:22px;
+      background: conic-gradient(var(--purple), var(--pink), var(--cyan), var(--purple));
+      animation: spin 3s linear infinite; z-index:-1;
+    }
+    @keyframes spin { to{transform:rotate(360deg)} }
+    .avatar-inner {
+      width:100%; height:100%;
+      background: linear-gradient(135deg,#5b21b6,#2e1065);
+      border-radius:20px; display:flex; align-items:center; justify-content:center; font-size:34px;
+    }
+    .app-name {
+      font-size:32px; font-weight:900;
+      background: linear-gradient(135deg, var(--purple-l), #fff, var(--cyan));
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    }
+    .app-sub { font-size:13px; color:var(--t2); text-align:center; line-height:1.5; }
 
-    /* Landing */
-    #landing{align-items:center;justify-content:center;padding:24px;text-align:center}
-    .hero{
-      width:min(560px,100%);
-      background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
-      border:1px solid var(--card2);
-      border-radius:28px;
-      padding:26px 20px;
-      box-shadow:var(--shadow);
-      backdrop-filter: blur(18px);
+    /* STATS */
+    .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:18px; }
+    .stat {
+      background:rgba(255,255,255,.04); border:1px solid var(--border);
+      border-radius:14px; padding:11px 6px; text-align:center; transition:.25s;
     }
-    [data-theme="light"] .hero{
-      background:linear-gradient(180deg, rgba(0,0,0,.04), rgba(0,0,0,.02));
+    .stat:hover { background:rgba(124,58,237,.12); transform:translateY(-2px); }
+    .stat-val { display:block; font-size:20px; font-weight:800; color:var(--purple-l); }
+    .stat-val.live { color:var(--green); }
+    .stat-lbl { font-size:11px; color:var(--t2); margin-top:2px; display:block; }
+    .dot-live {
+      display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--green);
+      animation: pulse 2s ease-in-out infinite;
     }
-    .logo{
-      width:92px;height:92px;margin:0 auto 16px;border-radius:28px;
-      background: radial-gradient(circle at 30% 20%, rgba(167,139,250,.9), rgba(124,58,237,.9));
-      box-shadow: 0 20px 60px rgba(124,58,237,.35);
-      display:flex;align-items:center;justify-content:center;
-      position:relative;
-      overflow:hidden;
-    }
-    .logo::after{
-      content:"";
-      position:absolute;inset:-30%;
-      background:conic-gradient(from 90deg, rgba(255,255,255,.0), rgba(255,255,255,.35), rgba(255,255,255,.0));
-      animation: sweep 2.8s linear infinite;
-    }
-    @keyframes sweep{to{transform:rotate(360deg)}}
-    .logo span{
-      position:relative;z-index:1;
-      font-size:34px;
-    }
-    .title{
-      font-size: clamp(46px, 11vw, 76px);
-      line-height:1;
-      font-weight:900;
-      letter-spacing:-.03em;
-      background: linear-gradient(135deg, #fff 0%, var(--p2) 45%, var(--c) 100%);
-      -webkit-background-clip:text;background-clip:text;color:transparent;
-      margin-bottom:10px;
-    }
-    [data-theme="light"] .title{
-      background: linear-gradient(135deg, #2b165f 0%, var(--p) 45%, #0e7490 100%);
-      -webkit-background-clip:text;background-clip:text;color:transparent;
-    }
-    .sub{color:var(--muted);font-weight:400;margin-bottom:18px}
-    .stats{display:flex;gap:18px;justify-content:center;margin:10px 0 18px}
-    .stat{
-      min-width:110px;
-      padding:10px 12px;border-radius:16px;
-      background:var(--card);border:1px solid var(--card2);
-    }
-    .stat b{display:block;font-size:20px;font-weight:900;color:var(--p2)}
-    .stat small{color:var(--muted)}
-    .tags{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:8px 0 18px}
-    .tag{
-      padding:10px 14px;border-radius:999px;
-      background:var(--card);border:1px solid var(--card2);
-      color:var(--muted);cursor:pointer;user-select:none;
-      transition:.15s transform,.15s border-color,.15s color,.15s background;
-    }
-    .tag.active{border-color:rgba(167,139,250,.7);color:var(--text);background:rgba(124,58,237,.18)}
-    .tag:active{transform:scale(.98)}
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
 
-    .cta{
-      display:flex;flex-direction:column;gap:12px;align-items:center;
-      margin-top:8px;
+    /* AGE */
+    .age-box {
+      display:flex; align-items:center; gap:10px;
+      background:rgba(236,72,153,.08); border:1px solid rgba(236,72,153,.25);
+      border-radius:14px; padding:12px 14px; margin-bottom:16px;
+      cursor:pointer; transition:.25s;
     }
-    .btn{
-      width:min(420px,100%);
-      padding:16px 18px;border:none;border-radius:999px;
-      font-weight:900;font-size:18px;color:#fff;cursor:pointer;
-      background:linear-gradient(135deg,var(--p),#9333ea,var(--p2));
-      box-shadow: 0 14px 44px rgba(124,58,237,.35);
-      display:flex;align-items:center;justify-content:center;gap:10px;
-      transition:.2s transform,.2s box-shadow;
+    .age-box:hover { background:rgba(236,72,153,.14); }
+    .age-icon { font-size:22px; flex-shrink:0; }
+    .age-text { flex:1; }
+    .age-text strong { display:block; font-size:13px; font-weight:700; color:#f9a8d4; margin-bottom:2px; }
+    .age-text span { font-size:11px; color:var(--t2); }
+    .checkbox {
+      width:22px; height:22px; border:2px solid rgba(236,72,153,.45);
+      border-radius:6px; flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:.2s;
     }
-    .btn:hover{transform:translateY(-2px);box-shadow:0 22px 60px rgba(124,58,237,.45)}
-    .btn:active{transform:scale(.98)}
-    .pill{
-      font-size:13px;color:var(--muted);
-      display:flex;align-items:center;gap:8px;
-    }
+    .checkbox.on { background:var(--pink); border-color:var(--pink); }
+    .checkbox.on::after { content:'✓'; color:#fff; font-size:13px; font-weight:700; }
 
-    /* Matching */
-    #matching{align-items:center;justify-content:center;flex-direction:column;gap:16px}
-    .ring{
-      width:180px;height:180px;border-radius:999px;position:relative;
-      border:1px solid rgba(167,139,250,.25);
-      display:flex;align-items:center;justify-content:center;
+    /* SECTION LABEL */
+    .sec-label { font-size:11px; font-weight:700; letter-spacing:1.2px; color:var(--t2); text-transform:uppercase; margin-bottom:10px; padding-right:2px; }
+
+    /* TOPICS */
+    .topics { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:18px; }
+    .topic {
+      background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1);
+      border-radius:999px; padding:7px 15px;
+      font-family:'Tajawal',sans-serif; font-size:13px; font-weight:500; color:var(--t1);
+      cursor:pointer; transition:.22s cubic-bezier(.34,1.56,.64,1); position:relative; overflow:hidden;
     }
-    .ring::before{
-      content:"";position:absolute;inset:-14px;border-radius:999px;
-      border:1px solid rgba(167,139,250,.18);
-      animation: pulse 1.8s ease-in-out infinite;
+    .topic::before {
+      content:''; position:absolute; inset:0;
+      background:linear-gradient(135deg,var(--purple),var(--pink));
+      opacity:0; transition:.22s; border-radius:inherit;
     }
-    .ring::after{
-      content:"";position:absolute;inset:0;border-radius:999px;
-      background:conic-gradient(from 0deg, transparent 70%, rgba(124,58,237,.6));
-      animation: rot 1.2s linear infinite;
+    .topic span { position:relative; z-index:1; }
+    .topic:hover { transform:scale(1.07); border-color:var(--purple); }
+    .topic.active { border-color:var(--purple); color:#fff; }
+    .topic.active::before { opacity:1; }
+
+    /* SAFETY */
+    .safety {
+      background:rgba(34,211,238,.05); border:1px solid rgba(34,211,238,.18);
+      border-radius:16px; padding:14px; margin-bottom:18px;
     }
-    @keyframes rot{to{transform:rotate(360deg)}}
-    @keyframes pulse{50%{transform:scale(1.05);opacity:.5}}
-    .ring .ic{
-      width:54px;height:54px;border-radius:999px;
-      background:linear-gradient(135deg,var(--p),var(--p2));
-      display:flex;align-items:center;justify-content:center;
-      z-index:1;font-size:22px;
-      box-shadow:0 18px 50px rgba(124,58,237,.35);
-    }
-    .matchT{font-size:24px;font-weight:900}
-    .matchS{color:var(--muted)}
-    .btn2{
-      padding:12px 18px;border-radius:999px;border:1px solid var(--card2);
-      background:var(--card);color:var(--muted);cursor:pointer;
+    .safety-title { font-size:13px; font-weight:700; color:var(--cyan); margin-bottom:10px; }
+    .safety-item { font-size:12px; color:var(--t2); padding:3px 0 3px 0; padding-right:14px; position:relative; }
+    .safety-item::before {
+      content:''; position:absolute; right:0; top:50%; transform:translateY(-50%);
+      width:6px; height:6px; border-radius:50%; background:var(--cyan);
     }
 
-    /* Chat */
-    #chat{flex-direction:column;height:100%}
-    .top{
-      display:flex;align-items:center;justify-content:space-between;
-      padding:14px 14px calc(14px + env(safe-area-inset-top));
-      background:rgba(10,7,25,.75);
-      border-bottom:1px solid var(--card2);
-      backdrop-filter: blur(18px);
+    /* BUTTONS */
+    .btn-start {
+      width:100%; padding:16px;
+      background:linear-gradient(135deg,var(--purple),#5b21b6);
+      border:none; border-radius:16px;
+      font-family:'Tajawal',sans-serif; font-size:17px; font-weight:800; color:#fff;
+      cursor:pointer; transition:.3s cubic-bezier(.34,1.56,.64,1);
+      box-shadow:0 8px 28px rgba(124,58,237,.4);
+      position:relative; overflow:hidden; margin-bottom:10px;
     }
-    [data-theme="light"] .top{background:rgba(246,245,255,.88)}
-    .peer{
-      display:flex;gap:10px;align-items:center;
+    .btn-start::after {
+      content:''; position:absolute; top:0; left:-100%; width:100%; height:100%;
+      background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent); transition:left .5s;
     }
-    .ava{
-      width:44px;height:44px;border-radius:999px;
-      background:linear-gradient(135deg,var(--p),var(--p2));
-      display:flex;align-items:center;justify-content:center;
-      position:relative;
-    }
-    .dot{
-      position:absolute;bottom:2px;right:2px;
-      width:10px;height:10px;border-radius:999px;background:var(--g);
-      border:2px solid rgba(10,7,25,.75);
-    }
-    [data-theme="light"] .dot{border-color:rgba(246,245,255,.88)}
-    .pname{font-weight:900}
-    .pmeta{font-size:12px;color:var(--muted);margin-top:2px}
-    .actions{display:flex;gap:8px}
-    .iconBtn{
-      width:38px;height:38px;border-radius:999px;
-      border:1px solid var(--card2);background:var(--card);
-      color:var(--text);cursor:pointer;
-    }
+    .btn-start:hover::after { left:100%; }
+    .btn-start:hover:not(:disabled) { transform:translateY(-3px) scale(1.02); box-shadow:0 16px 36px rgba(124,58,237,.5); }
+    .btn-start:disabled { opacity:.35; cursor:not-allowed; transform:none; }
 
-    .msgs{
-      flex:1;overflow:auto;padding:16px 14px;
-      background:linear-gradient(180deg, rgba(255,255,255,.03), transparent);
+    .btn-report {
+      width:100%; padding:11px;
+      background:rgba(248,113,113,.07); border:1px solid rgba(248,113,113,.2);
+      border-radius:12px; font-family:'Tajawal',sans-serif; font-size:13px; font-weight:600;
+      color:var(--red); cursor:pointer; transition:.22s; margin-bottom:10px;
     }
-    .sys{
-      width:fit-content;max-width:92%;
-      margin:10px auto;
-      padding:8px 12px;border-radius:999px;
-      border:1px solid var(--card2);background:var(--card);
-      color:var(--muted);font-size:12px;
-    }
-    .row{display:flex;gap:8px;margin:10px 0;max-width:92%}
-    .row.me{margin-left:auto;flex-direction:row-reverse}
-    .bub{
-      padding:12px 14px;border-radius:18px;line-height:1.7;
-      border:1px solid var(--card2);
-      background:rgba(255,255,255,.05);
-      white-space:pre-wrap;
-    }
-    .me .bub{
-      background:linear-gradient(135deg,var(--p),#9333ea);
-      border:none;color:#fff;
-      box-shadow:0 14px 40px rgba(124,58,237,.28);
-    }
-    .time{font-size:11px;color:var(--muted);margin-top:4px}
+    .btn-report:hover { background:rgba(248,113,113,.15); border-color:rgba(248,113,113,.4); transform:translateY(-1px); }
 
-    .typing{
-      display:none;gap:8px;align-items:center;
-      padding:8px 14px;color:var(--muted);font-size:12px;
+    .btn-share {
+      width:100%; padding:11px;
+      background:rgba(255,255,255,.04); border:1px solid var(--border);
+      border-radius:12px; font-family:'Tajawal',sans-serif; font-size:13px; font-weight:600;
+      color:var(--t2); cursor:pointer; transition:.22s; margin-bottom:18px;
     }
-    .typing.show{display:flex}
-    .dots{display:flex;gap:4px}
-    .dots i{
-      width:6px;height:6px;border-radius:999px;background:var(--muted);
-      animation: d 1.2s infinite ease-in-out;
-    }
-    .dots i:nth-child(2){animation-delay:.15s}
-    .dots i:nth-child(3){animation-delay:.3s}
-    @keyframes d{50%{transform:translateY(-3px);opacity:.4}}
+    .btn-share:hover { background:rgba(124,58,237,.1); border-color:var(--purple); color:var(--purple-l); }
 
-    .bottom{
-      padding:12px 12px calc(12px + env(safe-area-inset-bottom));
-      border-top:1px solid var(--card2);
-      background:rgba(10,7,25,.78);
-      backdrop-filter: blur(18px);
-    }
-    [data-theme="light"] .bottom{background:rgba(246,245,255,.92)}
-    .inrow{display:flex;gap:10px;align-items:flex-end}
-    textarea{
-      flex:1;min-height:44px;max-height:120px;resize:none;
-      border-radius:18px;border:1px solid var(--card2);
-      background:var(--card);color:var(--text);
-      padding:10px 12px;outline:none;
-      font-family:inherit;line-height:1.6;
-    }
-    .send{
-      width:44px;height:44px;border-radius:999px;border:none;
-      background:linear-gradient(135deg,var(--p),var(--p2));
-      color:#fff;font-size:18px;cursor:pointer;
-      box-shadow:0 12px 34px rgba(124,58,237,.35);
-    }
-    .mic{
-      width:44px;height:44px;border-radius:999px;border:1px solid var(--card2);
-      background:var(--card);color:var(--text);cursor:pointer;
-      display:flex;align-items:center;justify-content:center;
-    }
-    .mic.rec{
-      border-color:rgba(239,68,68,.55);
-      box-shadow:0 0 0 4px rgba(239,68,68,.15);
-      color:#fff;
-      background:linear-gradient(135deg,#ef4444,#f97316);
-    }
-    .hint{
-      margin-top:8px;display:flex;justify-content:space-between;gap:10px;
-      color:var(--muted);font-size:12px;padding:0 2px;
-    }
+    /* FOOTER */
+    .footer { display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:6px; }
+    .badge { font-size:11px; color:var(--t2); }
+    .sep { color:rgba(255,255,255,.15); font-size:10px; }
 
-    .toastArea{
-      position:fixed;top:12px;left:50%;transform:translateX(-50%);
-      z-index:999;display:flex;flex-direction:column;gap:8px;pointer-events:none;
+    /* MODAL */
+    .overlay {
+      position:fixed; inset:0; background:rgba(0,0,0,.72); backdrop-filter:blur(10px);
+      z-index:100; display:flex; align-items:center; justify-content:center;
+      opacity:0; pointer-events:none; transition:opacity .3s;
     }
-    .toast{
-      pointer-events:none;
-      padding:10px 14px;border-radius:999px;
-      border:1px solid var(--card2);background:rgba(10,7,25,.88);
-      backdrop-filter: blur(18px);
-      color:var(--text);font-size:13px;
-      box-shadow:var(--shadow);
-      animation: tin .25s ease both;
+    .overlay.show { opacity:1; pointer-events:all; }
+    .modal {
+      background:linear-gradient(145deg,#1a0b3a,#0d0520);
+      border:1px solid rgba(248,113,113,.3); border-radius:22px;
+      padding:26px 22px; width:310px; text-align:center;
+      transform:scale(.9) translateY(20px); transition:transform .35s cubic-bezier(.34,1.56,.64,1);
     }
-    [data-theme="light"] .toast{background:rgba(246,245,255,.92)}
-    @keyframes tin{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
-    .toast.out{animation:tout .22s ease both}
-    @keyframes tout{to{opacity:0;transform:translateY(-8px)}}
+    .overlay.show .modal { transform:scale(1) translateY(0); }
+    .modal-icon  { font-size:42px; margin-bottom:12px; }
+    .modal-title { font-size:18px; font-weight:800; color:var(--red); margin-bottom:8px; }
+    .modal-sub   { font-size:12px; color:var(--t2); line-height:1.6; margin-bottom:18px; }
+    .modal-opts  { display:flex; flex-direction:column; gap:7px; margin-bottom:16px; }
+    .opt {
+      padding:10px 14px; background:rgba(248,113,113,.07); border:1px solid rgba(248,113,113,.15);
+      border-radius:10px; font-family:'Tajawal',sans-serif; font-size:13px;
+      color:var(--red); cursor:pointer; text-align:right; transition:.2s;
+    }
+    .opt:hover { background:rgba(248,113,113,.16); }
+    .opt.sel    { background:rgba(248,113,113,.22); border-color:var(--red); }
+    .btn-send {
+      width:100%; padding:12px; background:linear-gradient(135deg,#ef4444,#dc2626);
+      border:none; border-radius:12px; font-family:'Tajawal',sans-serif;
+      font-size:14px; font-weight:700; color:#fff; cursor:pointer; margin-bottom:8px; transition:.2s;
+    }
+    .btn-send:hover { transform:translateY(-2px); box-shadow:0 8px 22px rgba(239,68,68,.35); }
+    .btn-cancel { background:none; border:none; font-family:'Tajawal',sans-serif; font-size:13px; color:var(--t2); cursor:pointer; padding:8px; }
+    .btn-cancel:hover { color:var(--t1); }
 
-    /* زر تثبيت */
-    #installBtn{display:none}
-    #installBtn.show{display:inline-flex}
-
-    /* أزرار صغيرة */
-    .miniBtns{display:flex;gap:8px;flex-wrap:wrap}
-    .mini{
-      padding:8px 10px;border-radius:999px;border:1px solid var(--card2);
-      background:var(--card);color:var(--muted);cursor:pointer;font-size:12px;
+    /* TOAST */
+    .toast {
+      position:fixed; top:18px; left:50%;
+      transform:translateX(-50%) translateY(-90px);
+      background:linear-gradient(135deg,#059669,#047857);
+      color:#fff; padding:11px 20px; border-radius:14px;
+      font-size:13px; font-weight:600; z-index:200; white-space:nowrap;
+      box-shadow:0 8px 24px rgba(5,150,105,.45);
+      transition:transform .4s cubic-bezier(.34,1.56,.64,1);
     }
+    .toast.show { transform:translateX(-50%) translateY(0); }
   </style>
 </head>
-
 <body>
-  <canvas id="stars"></canvas>
-  <div class="grain"></div>
 
-  <button class="theme-btn" id="themeBtn" title="تبديل السمة">🌙</button>
-  <div class="toastArea" id="toasts"></div>
+<div class="stars" id="stars"></div>
+<div class="toast" id="toast">✅ تم إرسال البلاغ بنجاح</div>
 
-  <div class="app">
-    <!-- Landing -->
-    <section class="screen active" id="landing">
-      <div class="hero">
-        <div class="logo"><span>👤</span></div>
-        <div class="title">مجهول+</div>
-        <div class="sub">دردش مع غريب — بلا هوية، بلا قيود</div>
+<!-- Report Modal -->
+<div class="overlay" id="modal">
+  <div class="modal">
+    <div class="modal-icon">🚨</div>
+    <div class="modal-title">الإبلاغ عن محادثة</div>
+    <div class="modal-sub">اختر سبب البلاغ وسيراجعه فريق الإشراف خلال 24 ساعة</div>
+    <div class="modal-opts">
+      <button class="opt" onclick="pick(this)">🔞 محتوى غير لائق</button>
+      <button class="opt" onclick="pick(this)">⚠️ تحرش أو إيذاء</button>
+      <button class="opt" onclick="pick(this)">🤖 حساب مزيف أو بوت</button>
+      <button class="opt" onclick="pick(this)">🔫 تهديدات أو عنف</button>
+      <button class="opt" onclick="pick(this)">🔕 سبب آخر</button>
+    </div>
+    <button class="btn-send" onclick="sendReport()">إرسال البلاغ</button>
+    <button class="btn-cancel" onclick="closeModal()">إلغاء</button>
+  </div>
+</div>
 
-        <div class="stats">
-          <div class="stat"><b id="onlineNow">—</b><small>متصل الآن</small></div>
-          <div class="stat"><b id="chattingNow">—</b><small>في دردشة</small></div>
-          <div class="stat"><b>∞</b><small>لا حدود</small></div>
-        </div>
+<!-- Main Card -->
+<div class="card">
 
-        <div class="tags" id="tags">
-          <div class="tag">🎮 ألعاب</div>
-          <div class="tag">🎵 موسيقى</div>
-          <div class="tag">📚 كتب</div>
-          <div class="tag">🎬 أفلام</div>
-          <div class="tag">💻 تقنية</div>
-          <div class="tag">⚽ رياضة</div>
-          <div class="tag">🎨 فن</div>
-          <div class="tag">✈️ سفر</div>
-          <div class="tag">🍕 طعام</div>
-          <div class="tag">🧠 فلسفة</div>
-        </div>
-
-        <div class="cta">
-          <button class="btn" id="startBtn">ابدأ المحادثة ←</button>
-
-          <div class="miniBtns">
-            <button class="mini" id="installBtn">📲 تثبيت التطبيق</button>
-            <button class="mini" id="shareBtn">🔗 مشاركة</button>
-          </div>
-
-          <div class="pill">🔒 لا تسجيل · لا بيانات · مجهول تماماً</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Matching -->
-    <section class="screen" id="matching">
-      <div class="ring"><div class="ic">👤</div></div>
-      <div class="matchT">نبحث لك...</div>
-      <div class="matchS" id="matchSub">جاري مسح الشبكة</div>
-      <button class="btn2" id="cancelBtn">إلغاء</button>
-    </section>
-
-    <!-- Chat -->
-    <section class="screen" id="chat">
-      <div class="top">
-        <div class="peer">
-          <div class="ava"><span id="peerEmoji">👤</span><span class="dot" id="peerDot"></span></div>
-          <div>
-            <div class="pname">مجهول <span style="color:var(--p2)" id="peerId">#0000</span></div>
-            <div class="pmeta" id="peerStat">⚡ متصل الآن</div>
-          </div>
-        </div>
-        <div class="actions">
-          <button class="iconBtn" id="nextBtn" title="شخص جديد">🔀</button>
-          <button class="iconBtn" id="endBtn" title="إنهاء">✕</button>
-        </div>
-      </div>
-
-      <div class="msgs" id="msgs">
-        <div class="sys">🔒 محادثة خاصة · لا أحد يراها</div>
-      </div>
-
-      <div class="typing" id="typing">
-        <div class="dots"><i></i><i></i><i></i></div>
-        <span>جاري الكتابة...</span>
-      </div>
-
-      <div class="bottom">
-        <div class="inrow">
-          <button class="mic" id="micBtn" title="تسجيل صوت">🎙️</button>
-          <textarea id="input" placeholder="اكتب رسالتك..." rows="1"></textarea>
-          <button class="send" id="sendBtn" title="إرسال">➤</button>
-        </div>
-        <div class="hint">
-          <span id="count">0 / 500</span>
-          <span id="conn">🟡 جاري الاتصال...</span>
-        </div>
-      </div>
-    </section>
+  <div class="avatar-wrap">
+    <div class="avatar-ring">
+      <div class="avatar-inner">👤</div>
+    </div>
+    <div class="app-name">مجهول+</div>
+    <div class="app-sub">دردش مع غريب – بلا هوية، بلا قيود</div>
   </div>
 
+  <div class="stats">
+    <div class="stat">
+      <span class="stat-val">∞</span>
+      <span class="stat-lbl">لا حدود</span>
+    </div>
+    <div class="stat">
+      <span class="stat-val" id="chatCount">847</span>
+      <span class="stat-lbl">في دردشة</span>
+    </div>
+    <div class="stat">
+      <span class="stat-val live" id="onlineCount">1.2K <span class="dot-live"></span></span>
+      <span class="stat-lbl">متصل الآن</span>
+    </div>
+  </div>
+
+  <div class="age-box" onclick="toggleAge()">
+    <div class="age-icon">🔞</div>
+    <div class="age-text">
+      <strong>تأكيد السن</strong>
+      <span>هذا التطبيق للبالغين +18 فقط</span>
+    </div>
+    <div class="checkbox" id="ageBox"></div>
+  </div>
+
+  <div class="sec-label">اختر اهتماماتك</div>
+  <div class="topics">
+    <button class="topic" onclick="toggleTopic(this)"><span>🎵 موسيقى</span></button>
+    <button class="topic" onclick="toggleTopic(this)"><span>🎮 ألعاب</span></button>
+    <button class="topic" onclick="toggleTopic(this)"><span>💻 تقنية</span></button>
+    <button class="topic" onclick="toggleTopic(this)"><span>🎬 أفلام</span></button>
+    <button class="topic" onclick="toggleTopic(this)"><span>📚 كتب</span></button>
+    <button class="topic" onclick="toggleTopic(this)"><span>✈️ سفر</span></button>
+    <button class="topic" onclick="toggleTopic(this)"><span>🎨 فن</span></button>
+    <button class="topic" onclick="toggleTopic(this)"><span>⚽ رياضة</span></button>
+    <button class="topic" onclick="toggleTopic(this)"><span>🧠 فلسفة</span></button>
+    <button class="topic" onclick="toggleTopic(this)"><span>🍕 طعام</span></button>
+  </div>
+
+  <div class="safety">
+    <div class="safety-title">🛡️ ميزات الأمان</div>
+    <div class="safety-item">نظام إبلاغ فوري عن المحادثات المسيئة</div>
+    <div class="safety-item">حظر تلقائي للمستخدمين المبلَّغ عنهم</div>
+    <div class="safety-item">فريق إشراف بشري يراجع البلاغات</div>
+    <div class="safety-item">سياسة خصوصية واضحة – لا يُحفظ شيء</div>
+  </div>
+
+  <button class="btn-start" id="startBtn" onclick="startChat()" disabled>
+    ابدأ المحادثة ←
+  </button>
+
+  <button class="btn-report" onclick="openModal()">
+    🚨 الإبلاغ عن محادثة مسيئة
+  </button>
+
+  <button class="btn-share" onclick="shareApp()">
+    🔗 مشاركة التطبيق
+  </button>
+
+  <div class="footer">
+    <span class="badge">🔒 لا تسجيل</span>
+    <span class="sep">·</span>
+    <span class="badge">🗄️ لا بيانات</span>
+    <span class="sep">·</span>
+    <span class="badge">👤 مجهول تماماً</span>
+    <span class="sep">·</span>
+    <span class="badge">🔞 +18 فقط</span>
+  </div>
+
+</div>
+
 <script>
-/* =========================
-   ⭐ Stars
-========================= */
-const cvs = document.getElementById('stars');
-const ctx = cvs.getContext('2d');
-let stars = [];
-function resize(){
-  cvs.width = innerWidth; cvs.height = innerHeight;
-  stars = Array.from({length: 120}, () => ({
-    x: Math.random()*cvs.width,
-    y: Math.random()*cvs.height,
-    r: Math.random()*1.1 + .2,
-    a: Math.random()*Math.PI*2,
-    s: Math.random()*.003 + .001,
-    dx: (Math.random()-.5)*.05
-  }));
-}
-function draw(){
-  ctx.clearRect(0,0,cvs.width,cvs.height);
-  for(const p of stars){
-    p.a += p.s;
-    p.x += p.dx;
-    if(p.x < 0) p.x = cvs.width;
-    if(p.x > cvs.width) p.x = 0;
-    const al = (Math.sin(p.a)+1)/2*.55 + .08;
-    ctx.beginPath();
-    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-    ctx.fillStyle = `rgba(167,139,250,${al})`;
-    ctx.fill();
+  // Stars
+  const starsEl = document.getElementById('stars');
+  for (let i = 0; i < 90; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const sz = Math.random() * 2.4 + 0.4;
+    s.style.cssText = `width:${sz}px;height:${sz}px;top:${Math.random()*100}%;left:${Math.random()*100}%;--d:${(Math.random()*3+2).toFixed(1)}s;animation-delay:${(Math.random()*4).toFixed(1)}s`;
+    starsEl.appendChild(s);
   }
-  requestAnimationFrame(draw);
-}
-resize(); draw();
-addEventListener('resize', resize);
 
-/* =========================
-   Helpers
-========================= */
-const $ = (id)=>document.getElementById(id);
-function show(id){
-  for(const s of document.querySelectorAll('.screen')) s.classList.remove('active');
-  $(id).classList.add('active');
-}
-function toast(msg, dur=2500){
-  const area = $('toasts');
-  const t = document.createElement('div');
-  t.className = 'toast';
-  t.textContent = msg;
-  area.appendChild(t);
-  setTimeout(()=>{ t.classList.add('out'); setTimeout(()=>t.remove(),250); }, dur);
-}
-function timeNow(){
-  return new Date().toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit'});
-}
-function getTags(){
-  return [...document.querySelectorAll('#tags .tag.active')].map(x=>x.textContent.trim());
-}
-
-/* =========================
-   Theme
-========================= */
-let theme = localStorage.getItem('mjTheme') || 'dark';
-function applyTheme(){
-  document.documentElement.setAttribute('data-theme', theme==='light' ? 'light' : '');
-  $('themeBtn').textContent = theme==='light' ? '🌙' : '☀️';
-  localStorage.setItem('mjTheme', theme);
-}
-$('themeBtn').onclick = ()=>{
-  theme = theme==='dark' ? 'light' : 'dark';
-  applyTheme();
-  toast(theme==='light' ? '☀️ تم تفعيل الفاتح' : '🌙 تم تفعيل الداكن');
-};
-applyTheme();
-
-/* =========================
-   PWA: Service Worker + Install
-========================= */
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').catch(()=>{});
-}
-let deferredPrompt = null;
-window.addEventListener('beforeinstallprompt', (e)=>{
-  e.preventDefault();
-  deferredPrompt = e;
-  $('installBtn').classList.add('show');
-});
-$('installBtn').onclick = async ()=>{
-  if(!deferredPrompt) return toast('❗ التثبيت غير متاح الآن');
-  deferredPrompt.prompt();
-  await deferredPrompt.userChoice;
-  deferredPrompt = null;
-  $('installBtn').classList.remove('show');
-};
-$('shareBtn').onclick = async ()=>{
-  const url = location.href;
-  if(navigator.share){
-    try{ await navigator.share({title:'مجهول+', text:'جرّب مجهول+', url}); }catch(e){}
-  }else{
-    try{ await navigator.clipboard.writeText(url); toast('✅ تم نسخ الرابط'); }catch(e){ toast(url, 4000); }
+  // Age
+  let ageOk = false;
+  function toggleAge() {
+    ageOk = !ageOk;
+    document.getElementById('ageBox').classList.toggle('on', ageOk);
+    document.getElementById('startBtn').disabled = !ageOk;
   }
-};
 
-/* =========================
-   Tags UI
-========================= */
-for(const el of document.querySelectorAll('#tags .tag')){
-  el.addEventListener('click', ()=> el.classList.toggle('active'));
-}
+  // Topics
+  function toggleTopic(el) { el.classList.toggle('active'); }
 
-/* =========================
-   Socket.IO
-========================= */
-const socket = io({
-  transports: ['websocket','polling'],  // ✅ يمنع Transport unknown
-  upgrade: true,
-  reconnectionAttempts: 8,
-  reconnectionDelay: 1500
-});
-
-socket.on('connect', ()=>{
-  $('conn').textContent = '🟢 متصل';
-  fetchStats();
-});
-socket.on('disconnect', ()=>{
-  $('conn').textContent = '🔴 انقطع الاتصال';
-});
-socket.on('connect_error', ()=>{
-  $('conn').textContent = '🟡 مشكلة اتصال';
-});
-
-/* Stats */
-socket.on('stats:update', (d)=>{
-  $('onlineNow').textContent = d.online ?? 0;
-  $('chattingNow').textContent = d.chatting ?? 0;
-});
-async function fetchStats(){
-  try{
-    const r = await fetch('/api/stats', {cache:'no-store'});
-    const d = await r.json();
-    $('onlineNow').textContent = d.online ?? 0;
-    $('chattingNow').textContent = d.chatting ?? 0;
-  }catch(e){}
-}
-
-/* Matching */
-socket.on('waiting', ()=>{
-  $('matchSub').textContent = 'في قائمة الانتظار... ⏳';
-});
-socket.on('matched', ({peerId})=>{
-  connectChat(peerId);
-});
-
-/* Text messages */
-socket.on('message:receive', ({text})=>{
-  addMsg('them', text);
-});
-
-/* Voice messages (Blob/ArrayBuffer) */
-socket.on('voice:receive', async ({audio, mime})=>{
-  // audio قد يصل ArrayBuffer أو base64 حسب سيرفرك
-  let blob;
-  if (audio instanceof ArrayBuffer) {
-    blob = new Blob([audio], {type: mime || 'audio/webm'});
-  } else if (typeof audio === 'string') {
-    // base64
-    const bin = atob(audio);
-    const bytes = new Uint8Array(bin.length);
-    for (let i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i);
-    blob = new Blob([bytes], {type: mime || 'audio/webm'});
-  } else {
-    return;
+  // Start chat
+  function startChat() {
+    const btn = document.getElementById('startBtn');
+    btn.textContent = '🔍 جاري البحث عن شخص...';
+    btn.style.background = 'linear-gradient(135deg,#0891b2,#0e7490)';
+    btn.disabled = true;
+    setTimeout(() => {
+      btn.textContent = '✅ تم الاتصال! ابدأ الدردشة';
+      btn.style.background = 'linear-gradient(135deg,#059669,#047857)';
+      btn.disabled = false;
+    }, 2200);
   }
-  addVoice('them', blob);
-});
 
-/* Typing */
-let typingTimer=null;
-socket.on('typing:start', ()=> $('typing').classList.add('show'));
-socket.on('typing:stop', ()=> $('typing').classList.remove('show'));
-
-/* Partner left */
-socket.on('partner:left', ()=>{
-  $('peerStat').textContent = 'غير متصل';
-  $('peerDot').style.background = '#6b7280';
-  addSys('👋 غادر المجهول المحادثة');
-  toast('انتهت المحادثة');
-  show('landing');
-});
-
-/* =========================
-   App state + UI
-========================= */
-let state='landing';
-let msgCount=0;
-let chatStart=null;
-
-const peerEmojis = ['👤','🎭','👻','🤖','🦊','🐺','🧩','🌒','🎪','🕶️'];
-
-function addSys(text){
-  const d = document.createElement('div');
-  d.className = 'sys';
-  d.textContent = text;
-  $('msgs').appendChild(d);
-  $('msgs').scrollTop = $('msgs').scrollHeight;
-}
-
-function addMsg(who, text){
-  const row = document.createElement('div');
-  row.className = 'row ' + (who==='me'?'me':'them');
-  const bubble = document.createElement('div');
-  bubble.className = 'bub';
-  bubble.textContent = text;
-  const t = document.createElement('div');
-  t.className = 'time';
-  t.textContent = timeNow();
-
-  const wrap = document.createElement('div');
-  wrap.appendChild(bubble);
-  wrap.appendChild(t);
-
-  row.appendChild(wrap);
-  $('msgs').appendChild(row);
-  $('msgs').scrollTop = $('msgs').scrollHeight;
-}
-
-function addVoice(who, blob){
-  const row = document.createElement('div');
-  row.className = 'row ' + (who==='me'?'me':'them');
-
-  const bubble = document.createElement('div');
-  bubble.className = 'bub';
-
-  const url = URL.createObjectURL(blob);
-  const audio = document.createElement('audio');
-  audio.controls = true;
-  audio.src = url;
-  audio.style.width = '240px';
-  audio.style.maxWidth = '100%';
-
-  bubble.appendChild(audio);
-
-  const t = document.createElement('div');
-  t.className = 'time';
-  t.textContent = timeNow();
-
-  const wrap = document.createElement('div');
-  wrap.appendChild(bubble);
-  wrap.appendChild(t);
-
-  row.appendChild(wrap);
-  $('msgs').appendChild(row);
-  $('msgs').scrollTop = $('msgs').scrollHeight;
-}
-
-function connectChat(peerId){
-  state='chat';
-  msgCount=0; chatStart=Date.now();
-
-  const emoji = peerEmojis[Math.floor(Math.random()*peerEmojis.length)];
-  $('peerEmoji').textContent = emoji;
-  $('peerId').textContent = '#'+peerId;
-  $('peerStat').textContent = '⚡ متصل الآن';
-  $('peerDot').style.background = 'var(--g)';
-
-  $('msgs').innerHTML = '<div class="sys">🔒 محادثة خاصة · لا أحد يراها</div>';
-  addSys('✅ تم الاتصال بالمجهول #' + peerId);
-
-  show('chat');
-  setTimeout(()=> $('input').focus(), 350);
-}
-
-/* Buttons */
-$('startBtn').onclick = ()=>{
-  state='matching';
-  show('matching');
-  $('matchSub').textContent = 'جاري مسح الشبكة';
-  socket.emit('find:partner', {tags:getTags()});
-};
-
-$('cancelBtn').onclick = ()=>{
-  state='landing';
-  socket.emit('chat:end');
-  show('landing');
-};
-
-$('nextBtn').onclick = ()=>{
-  state='matching';
-  show('matching');
-  $('matchSub').textContent = 'نبحث عن شخص جديد...';
-  socket.emit('find:partner', {tags:getTags()});
-};
-
-$('endBtn').onclick = ()=>{
-  socket.emit('chat:end');
-  state='landing';
-  show('landing');
-  toast('تم إنهاء المحادثة');
-};
-
-/* Text input */
-const input = $('input');
-input.addEventListener('input', ()=>{
-  input.style.height='auto';
-  input.style.height = Math.min(input.scrollHeight, 120)+'px';
-  let len = input.value.length;
-  if(len>500){ input.value = input.value.slice(0,500); len=500; }
-  $('count').textContent = `${len} / 500`;
-});
-
-input.addEventListener('keydown', (e)=>{
-  if(e.key==='Enter' && !e.shiftKey){
-    e.preventDefault();
-    sendText();
-    return;
+  // Modal
+  let picked = null;
+  function openModal() {
+    picked = null;
+    document.querySelectorAll('.opt').forEach(o => o.classList.remove('sel'));
+    document.getElementById('modal').classList.add('show');
   }
-  if(state==='chat'){
-    socket.emit('typing:start');
-    clearTimeout(typingTimer);
-    typingTimer = setTimeout(()=> socket.emit('typing:stop'), 1200);
+  function closeModal() { document.getElementById('modal').classList.remove('show'); }
+  function pick(el) {
+    document.querySelectorAll('.opt').forEach(o => o.classList.remove('sel'));
+    el.classList.add('sel');
+    picked = el.textContent;
   }
-});
+  function sendReport() {
+    if (!picked) { showToast('⚠️ اختر سبب البلاغ أولاً', '#b45309'); return; }
+    closeModal();
+    showToast('✅ تم إرسال البلاغ بنجاح');
+  }
+  document.getElementById('modal').addEventListener('click', e => {
+    if (e.target === document.getElementById('modal')) closeModal();
+  });
 
-$('sendBtn').onclick = sendText;
-
-function sendText(){
-  const txt = input.value.trim();
-  if(!txt || state!=='chat') return;
-  socket.emit('message:send', {text:txt});
-  addMsg('me', txt);
-  msgCount++;
-  input.value='';
-  input.style.height='auto';
-  $('count').textContent='0 / 500';
-  socket.emit('typing:stop');
-}
-
-/* =========================
-   Voice Recording (WebM/Opus غالباً)
-========================= */
-let mediaRecorder = null;
-let chunks = [];
-let recording = false;
-
-$('micBtn').onclick = async ()=>{
-  if(state!=='chat') return toast('ابدأ محادثة أولاً');
-
-  if(!recording){
-    try{
-      const stream = await navigator.mediaDevices.getUserMedia({audio:true});
-      chunks = [];
-      mediaRecorder = new MediaRecorder(stream); // المتصفح يحدد النوع
-      mediaRecorder.ondataavailable = (e)=>{ if(e.data && e.data.size) chunks.push(e.data); };
-      mediaRecorder.onstop = async ()=>{
-        // اغلاق المايك
-        stream.getTracks().forEach(t=>t.stop());
-
-        const blob = new Blob(chunks, {type: mediaRecorder.mimeType || 'audio/webm'});
-        addVoice('me', blob);
-
-        // إرسال للسيرفر: ArrayBuffer
-        const buf = await blob.arrayBuffer();
-        socket.emit('voice:send', {audio: buf, mime: blob.type});
-        toast('🎙️ تم إرسال الصوت');
-      };
-      mediaRecorder.start();
-      recording = true;
-      $('micBtn').classList.add('rec');
-      $('micBtn').textContent = '⏹️';
-      toast('🎙️ بدأ التسجيل...');
-    }catch(err){
-      toast('❗ فعّل صلاحية المايك');
+  // Share
+  function shareApp() {
+    if (navigator.share) {
+      navigator.share({ title: 'مجهول+', text: 'دردش مع غرباء بشكل مجهول', url: location.href });
+    } else {
+      navigator.clipboard?.writeText(location.href);
+      showToast('🔗 تم نسخ الرابط!');
     }
-  } else {
-    // stop
-    recording = false;
-    $('micBtn').classList.remove('rec');
-    $('micBtn').textContent = '🎙️';
-    try{ mediaRecorder.stop(); }catch(e){}
   }
-};
+
+  // Toast
+  function showToast(msg, color) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    if (color) t.style.background = `linear-gradient(135deg,${color},${color})`;
+    else t.style.background = '';
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  // Live counter
+  setInterval(() => {
+    const el = document.getElementById('onlineCount');
+    const val = 1200 + Math.floor(Math.random() * 60) - 30;
+    el.innerHTML = val >= 1000
+      ? `${(val/1000).toFixed(1)}K <span class="dot-live"></span>`
+      : `${val} <span class="dot-live"></span>`;
+  }, 5000);
 </script>
 </body>
 </html>
