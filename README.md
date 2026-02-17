@@ -75,3 +75,5 @@ majhool-server/
 ├── railway.toml       ← إعدادات النشر
 └── .env.example       ← نموذج المتغيرات
 ```
+
+redeploy
