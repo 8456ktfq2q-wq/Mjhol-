@@ -1,239 +1,280 @@
-/**
- * مجهول — Anonymous Chat Server
- * Node.js + Socket.io
- */
+// server.js
+'use strict';
+
+const path = require('path');
+const http = require('http');
 
 const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
+const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const cors = require('cors');
-const path = require('path');
+const { Server } = require('socket.io');
+const { v4: uuidv4 } = require('uuid');
 
 const app = express();
-const server = http.createServer(app);
 
-// Railway يعطي PORT جاهز
-const PORT = Number(process.env.PORT) || 8080;
+/**
+ * ✅ Railway / Reverse Proxy fix
+ * Required to avoid: ERR_ERL_UNEXPECTED_X_FORWARDED_FOR
+ */
+app.set('trust proxy', 1);
 
-const CONFIG = {
-  MAX_MSG_LEN: 500,
-  MAX_MSGS_MIN: 60,
-  ALLOWED_ORIGIN: process.env.CLIENT_URL || '*',
-  PING_TIMEOUT: 20000,
-  PING_INTERVAL: 25000,
+app.use(helmet({
+  contentSecurityPolicy: false, // لأن عندك inline scripts + socket.io client
+}));
+app.use(cors({
+  origin: true,
+  credentials: true,
+}));
+app.use(express.json({ limit: '1mb' }));
+
+/**
+ * ✅ Rate limit (safe behind proxy)
+ */
+const limiter = rateLimit({
+  windowMs: 60 * 1000,     // 1 min
+  max: 300,                // عدّلها إذا تبغى
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use(limiter);
+
+/**
+ * ✅ Serve static frontend
+ * puts /public as root for static files
+ */
+app.use(express.static(path.join(__dirname, 'public')));
+
+/**
+ * ✅ Health + stats endpoints
+ */
+app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
+
+/**
+ * Global state
+ */
+const state = {
+  online: 0,
+  chatting: 0,
+  waiting: new Map(), // socket.id -> { tags: [], at: timestamp }
+  peers: new Map(),   // socket.id -> partnerSocketId
 };
 
-// SECURITY
-app.use(
-  helmet({
-    contentSecurityPolicy: false,
-  })
-);
-
-app.use(
-  cors({
-    origin: CONFIG.ALLOWED_ORIGIN,
-    methods: ['GET', 'POST'],
-  })
-);
-
-app.use(
-  rateLimit({
-    windowMs: 1 * 60 * 1000,
-    max: 100,
-    message: { error: 'طلبات كثيرة جداً، انتظر قليلاً' },
-    standardHeaders: true,
-    legacyHeaders: false,
-  })
-);
-
-app.use(express.json({ limit: '10kb' }));
-
-// SOCKET.IO
-const io = new Server(server, {
-  cors: {
-    origin: CONFIG.ALLOWED_ORIGIN,
-    methods: ['GET', 'POST'],
-  },
-  pingTimeout: CONFIG.PING_TIMEOUT,
-  pingInterval: CONFIG.PING_INTERVAL,
-  serveClient: false,
-});
-
-// STATE
-const waitingQueue = [];
-const activePairs = new Map();
-const msgCount = new Map();
-
-// HELPERS
-function genAnonId() {
-  return Math.floor(1000 + Math.random() * 9000).toString();
-}
-
-function checkMsgRate(socketId) {
-  const now = Date.now();
-  const data = msgCount.get(socketId) || { count: 0, resetAt: now + 60000 };
-
-  if (now > data.resetAt) {
-    data.count = 0;
-    data.resetAt = now + 60000;
-  }
-
-  data.count++;
-  msgCount.set(socketId, data);
-  return data.count <= CONFIG.MAX_MSGS_MIN;
-}
-
-function cleanupUser(socketId) {
-  const idx = waitingQueue.indexOf(socketId);
-  if (idx !== -1) waitingQueue.splice(idx, 1);
-
-  const partnerId = activePairs.get(socketId);
-  if (partnerId) {
-    const partnerSocket = io.sockets.sockets.get(partnerId);
-    if (partnerSocket) partnerSocket.emit('partner:left');
-    activePairs.delete(partnerId);
-  }
-
-  activePairs.delete(socketId);
-  msgCount.delete(socketId);
-}
-
-function tryMatch(socketId) {
-  const idx = waitingQueue.findIndex((id) => id !== socketId);
-  if (idx === -1) return false;
-
-  const partnerId = waitingQueue.splice(idx, 1)[0];
-
-  const myIdx = waitingQueue.indexOf(socketId);
-  if (myIdx !== -1) waitingQueue.splice(myIdx, 1);
-
-  activePairs.set(socketId, partnerId);
-  activePairs.set(partnerId, socketId);
-
-  const myAnonId = genAnonId();
-  const partnerAnonId = genAnonId();
-
-  const mySocket = io.sockets.sockets.get(socketId);
-  const partnerSocket = io.sockets.sockets.get(partnerId);
-
-  if (mySocket) mySocket.emit('matched', { peerId: partnerAnonId });
-  if (partnerSocket) partnerSocket.emit('matched', { peerId: myAnonId });
-
-  console.log(`✅ Match: ${socketId.slice(0, 6)} <-> ${partnerId.slice(0, 6)}`);
-  return true;
-}
-
+// helper: return stats
 function getStats() {
   return {
-    online: io.sockets.sockets.size,
-    waiting: waitingQueue.length,
-    chatting: activePairs.size / 2,
-    uptime: Math.floor(process.uptime()),
+    online: state.online,
+    chatting: state.chatting,
+    waiting: state.waiting.size,
   };
 }
 
-// ROUTES
-app.use(express.static(path.join(__dirname, 'public')));
-
 app.get('/api/stats', (req, res) => res.json(getStats()));
-app.get('/health', (req, res) => res.json({ status: 'ok', ...getStats() }));
 
-// مهم جداً لـ Railway
+// ✅ Root route: serve the SPA/main page (in case of refresh)
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// SOCKET EVENTS
-io.on('connection', (socket) => {
-  console.log(`🔗 Connected: ${socket.id.slice(0, 8)}...`);
+/**
+ * Create HTTP server + Socket.IO
+ */
+const server = http.createServer(app);
 
-  socket.on('find:partner', () => {
-    const oldPartner = activePairs.get(socket.id);
-    if (oldPartner) {
-      const op = io.sockets.sockets.get(oldPartner);
-      if (op) op.emit('partner:left');
-      activePairs.delete(oldPartner);
-      activePairs.delete(socket.id);
+const io = new Server(server, {
+  cors: {
+    origin: true,
+    credentials: true,
+  },
+  transports: ['websocket', 'polling'], // ✅ عشان ما يطلع Transport unknown
+  allowEIO3: true,
+});
+
+function broadcastStats() {
+  io.emit('stats:update', {
+    online: state.online,
+    chatting: state.chatting,
+  });
+}
+
+/**
+ * Matchmaking helpers
+ */
+function normalizeTags(tags) {
+  if (!Array.isArray(tags)) return [];
+  return tags
+    .map(t => String(t || '').trim())
+    .filter(Boolean)
+    .slice(0, 10);
+}
+
+function haveCommonTag(aTags, bTags) {
+  if (!aTags.length || !bTags.length) return false;
+  const setA = new Set(aTags);
+  return bTags.some(t => setA.has(t));
+}
+
+function isChatting(socketId) {
+  return state.peers.has(socketId);
+}
+
+function endChat(socketId, notifyPartner = true) {
+  const partnerId = state.peers.get(socketId);
+  if (partnerId) {
+    state.peers.delete(socketId);
+    state.peers.delete(partnerId);
+    state.chatting = Math.max(0, state.chatting - 2);
+
+    if (notifyPartner) {
+      const partnerSock = io.sockets.sockets.get(partnerId);
+      if (partnerSock) partnerSock.emit('partner:left');
     }
+  }
+  broadcastStats();
+}
 
-    if (!waitingQueue.includes(socket.id)) waitingQueue.push(socket.id);
+function removeFromQueue(socketId) {
+  if (state.waiting.has(socketId)) {
+    state.waiting.delete(socketId);
+  }
+}
 
-    if (!tryMatch(socket.id)) socket.emit('waiting');
+function tryMatch(socket, tags) {
+  // لا تطابق لو هو أصلاً في شات
+  if (isChatting(socket.id)) return;
+
+  // ابحث عن شخص ثاني في الانتظار
+  let chosenId = null;
+
+  for (const [otherId, otherInfo] of state.waiting.entries()) {
+    if (otherId === socket.id) continue;
+    if (isChatting(otherId)) continue;
+
+    // إذا الطرفين عندهم tags: حاول تطابق حسب اهتمامات مشتركة
+    const ok =
+      (tags.length === 0 && otherInfo.tags.length === 0) ||
+      (tags.length === 0) ||
+      (otherInfo.tags.length === 0) ||
+      haveCommonTag(tags, otherInfo.tags);
+
+    if (ok) {
+      chosenId = otherId;
+      break;
+    }
+  }
+
+  if (!chosenId) {
+    // ما فيه أحد مناسب -> خله ينتظر
+    state.waiting.set(socket.id, { tags, at: Date.now() });
+    socket.emit('waiting');
+    broadcastStats();
+    return;
+  }
+
+  // طابقهم
+  const otherSocket = io.sockets.sockets.get(chosenId);
+  if (!otherSocket) {
+    state.waiting.delete(chosenId);
+    // حاول مرة ثانية
+    return tryMatch(socket, tags);
+  }
+
+  // شيل الاثنين من الانتظار
+  state.waiting.delete(chosenId);
+  state.waiting.delete(socket.id);
+
+  // اربطهم
+  state.peers.set(socket.id, chosenId);
+  state.peers.set(chosenId, socket.id);
+
+  state.chatting += 2;
+
+  const peerIdA = String(Math.floor(Math.random() * 9000) + 1000);
+  const peerIdB = String(Math.floor(Math.random() * 9000) + 1000);
+
+  socket.emit('matched', { peerId: peerIdA });
+  otherSocket.emit('matched', { peerId: peerIdB });
+
+  broadcastStats();
+}
+
+/**
+ * Socket.IO events
+ */
+io.on('connection', (socket) => {
+  state.online += 1;
+  broadcastStats();
+
+  // send initial stats
+  socket.emit('stats:update', { online: state.online, chatting: state.chatting });
+
+  socket.on('find:partner', (payload = {}) => {
+    const tags = normalizeTags(payload.tags);
+
+    // إذا كان في شات، انهي القديم
+    if (isChatting(socket.id)) endChat(socket.id, true);
+
+    // شيله من الانتظار (لو كان موجود)
+    removeFromQueue(socket.id);
+
+    tryMatch(socket, tags);
   });
 
-  socket.on('message:send', ({ text } = {}) => {
-    if (typeof text !== 'string') return;
+  socket.on('message:send', (payload = {}) => {
+    const text = String(payload.text || '').trim();
+    if (!text) return;
 
-    const clean = text.trim().slice(0, CONFIG.MAX_MSG_LEN);
-    if (!clean) return;
-
-    if (!checkMsgRate(socket.id)) {
-      socket.emit('error:ratelimit', { message: 'أرسلت رسائل كثيرة جداً، انتظر قليلاً ⏳' });
-      return;
-    }
-
-    const partnerId = activePairs.get(socket.id);
+    const partnerId = state.peers.get(socket.id);
     if (!partnerId) {
-      socket.emit('error:nopartner', { message: 'لست في محادثة حالياً' });
+      socket.emit('error:noparter');
       return;
     }
 
-    const partnerSocket = io.sockets.sockets.get(partnerId);
-    if (!partnerSocket) return;
+    const partnerSock = io.sockets.sockets.get(partnerId);
+    if (!partnerSock) return;
 
-    partnerSocket.emit('message:receive', { text: clean, ts: Date.now() });
+    partnerSock.emit('message:receive', { text, ts: Date.now() });
   });
 
   socket.on('typing:start', () => {
-    const partnerId = activePairs.get(socket.id);
+    const partnerId = state.peers.get(socket.id);
     if (!partnerId) return;
-    const ps = io.sockets.sockets.get(partnerId);
-    if (ps) ps.emit('typing:start');
+    const partnerSock = io.sockets.sockets.get(partnerId);
+    if (!partnerSock) return;
+    partnerSock.emit('typing:start');
   });
 
   socket.on('typing:stop', () => {
-    const partnerId = activePairs.get(socket.id);
+    const partnerId = state.peers.get(socket.id);
     if (!partnerId) return;
-    const ps = io.sockets.sockets.get(partnerId);
-    if (ps) ps.emit('typing:stop');
+    const partnerSock = io.sockets.sockets.get(partnerId);
+    if (!partnerSock) return;
+    partnerSock.emit('typing:stop');
   });
 
   socket.on('chat:end', () => {
-    const partnerId = activePairs.get(socket.id);
-    if (partnerId) {
-      const ps = io.sockets.sockets.get(partnerId);
-      if (ps) ps.emit('partner:left');
-      activePairs.delete(partnerId);
-    }
-    activePairs.delete(socket.id);
+    // انهِ محادثته إذا موجودة
+    endChat(socket.id, true);
+    // وطلّعه من الانتظار
+    removeFromQueue(socket.id);
   });
 
-  socket.on('disconnect', (reason) => {
-    console.log(`❌ Disconnected: ${socket.id.slice(0, 8)}... reason: ${reason}`);
-    cleanupUser(socket.id);
-  });
+  socket.on('disconnect', () => {
+    // إذا كان ينتظر
+    removeFromQueue(socket.id);
 
-  socket.on('error', (err) => {
-    console.error(`⚠️ Socket error ${socket.id.slice(0, 8)}:`, err?.message || err);
+    // إذا كان في محادثة
+    endChat(socket.id, true);
+
+    state.online = Math.max(0, state.online - 1);
+    broadcastStats();
   });
 });
 
-// STATS BROADCAST
-setInterval(() => {
-  io.emit('stats:update', getStats());
-}, 5000);
-
-// START SERVER
+/**
+ * Start server (Railway-friendly)
+ */
+const PORT = process.env.PORT || 8080;
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Server listening on PORT=${PORT}`);
-});
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('Shutting down gracefully...');
-  io.emit('server:shutdown', { message: 'السيرفر يُعاد تشغيله قريباً' });
-  server.close(() => process.exit(0));
 });
