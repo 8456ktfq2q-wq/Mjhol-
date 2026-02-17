@@ -1,640 +1,83 @@
 <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>مجهول</title>
 
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3CradialGradient id='g' cx='35%25' cy='35%25'%3E%3Cstop offset='0%25' stop-color='%23a78bfa'/%3E%3Cstop offset='100%25' stop-color='%236d28d9'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='30' fill='url(%23g)'/%3E%3Ccircle cx='32' cy='26' r='10' fill='rgba(255,255,255,0.9)'/%3E%3Cellipse cx='32' cy='50' rx='16' ry='10' fill='rgba(255,255,255,0.9)'/%3E%3C/svg%3E">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-<!-- Socket.io Client (لازم قبل سكربتك) -->
+<title>مجهول +</title>
+
+<!-- PWA -->
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#6d28d9">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="مجهول +">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+
+<!-- Socket -->
 <script src="/socket.io/socket.io.js"></script>
 
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@200;300;400;500;700;900&family=Cairo+Play:wght@300;400;600;700;900&display=swap" rel="stylesheet">
-
 <style>
-/* ===== نفس CSS حقك بدون تغيير ===== */
-:root {
-  --bg:#03020a; --bg2:#060511; --card:rgba(255,255,255,0.028); --card-b:rgba(255,255,255,0.055);
-  --accent:#6d28d9; --accent-b:#8b5cf6; --glow:#a78bfa; --cyan:#06b6d4; --rose:#f43f5e;
-  --text:#f1f0f8; --sub:#9d9ab8; --muted:#3d3a55; --online:#10b981;
-  --input-bg:rgba(255,255,255,0.05); --input-b:rgba(255,255,255,0.08);
-  --bubble-them:rgba(255,255,255,0.045); --bubble-b:rgba(255,255,255,0.07);
-  --header-bg:rgba(3,2,10,0.92); --footer-bg:rgba(3,2,10,0.97);
+body{
+  margin:0;
+  font-family:system-ui;
+  background:#03020a;
+  color:white;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  height:100vh;
 }
-[data-theme="light"] {
-  --bg:#f5f4ff; --bg2:#ede9ff; --card:rgba(0,0,0,0.04); --card-b:rgba(0,0,0,0.08);
-  --text:#1a1730; --sub:#5a567a; --muted:#a0a0b8;
-  --input-bg:rgba(0,0,0,0.05); --input-b:rgba(0,0,0,0.1);
-  --bubble-them:rgba(0,0,0,0.06); --bubble-b:rgba(0,0,0,0.08);
-  --header-bg:rgba(245,244,255,0.95); --footer-bg:rgba(245,244,255,0.98);
+
+button{
+  background:linear-gradient(135deg,#6d28d9,#9333ea);
+  border:none;
+  padding:18px 40px;
+  border-radius:40px;
+  color:white;
+  font-size:20px;
 }
-*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{background:var(--bg);color:var(--text);font-family:'Tajawal',sans-serif;min-height:100vh;overflow:hidden;transition:background .4s,color .4s}
-#starfield{position:fixed;inset:0;z-index:0;transition:opacity .5s}
-[data-theme="light"] #starfield{opacity:.12}
-.grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.028;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23g)'/%3E%3C/svg%3E");background-size:200px;animation:grain .5s steps(2) infinite}
-@keyframes grain{0%{transform:translate(0,0)}25%{transform:translate(-3px,2px)}50%{transform:translate(2px,-3px)}75%{transform:translate(-2px,-1px)}100%{transform:translate(3px,2px)}}
-.blob{position:fixed;border-radius:50%;filter:blur(100px);pointer-events:none;z-index:0}
-.blob-1{width:700px;height:700px;background:radial-gradient(circle,rgba(109,40,217,.13) 0%,transparent 70%);top:-200px;right:-150px;animation:bf 18s ease-in-out infinite alternate}
-.blob-2{width:500px;height:500px;background:radial-gradient(circle,rgba(6,182,212,.07) 0%,transparent 70%);bottom:-100px;left:-100px;animation:bf 13s ease-in-out infinite alternate-reverse}
-@keyframes bf{from{transform:translate(0,0) scale(1)}to{transform:translate(40px,-30px) scale(1.15)}}
-.theme-btn{position:fixed;top:1.2rem;left:1.2rem;z-index:9000;width:42px;height:42px;border-radius:50%;background:var(--card);border:1px solid var(--card-b);color:var(--text);font-size:1.1rem;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .25s;backdrop-filter:blur(12px)}
-.theme-btn:hover{transform:scale(1.1)}
-.screen{position:fixed;inset:0;z-index:10;display:none;flex-direction:column;align-items:center;justify-content:center}
-.screen.active{display:flex;animation:sc-in .5s cubic-bezier(.16,1,.3,1) both}
-@keyframes sc-in{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 
-/* LANDING */
-#screen-landing{padding:2rem;text-align:center}
-.logo-wrap{position:relative;width:100px;height:100px;margin:0 auto 1.8rem}
-.logo-bg{position:absolute;inset:0;border-radius:50%;background:linear-gradient(135deg,#6d28d9,#8b5cf6);box-shadow:0 0 50px rgba(109,40,217,.5)}
-.logo-face{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2.5rem;z-index:2}
-.logo-ring{position:absolute;border-radius:50%;border:1px solid rgba(167,139,250,.22);animation:rp 3s ease-in-out infinite}
-.lr1{inset:-18px;animation-delay:0s}.lr2{inset:-36px;animation-delay:.9s}
-@keyframes rp{0%,100%{opacity:.22;transform:scale(1)}50%{opacity:.6;transform:scale(1.04)}}
-.site-title{font-family:'Cairo Play',sans-serif;font-weight:900;font-size:clamp(3.5rem,11vw,7.5rem);letter-spacing:-.04em;line-height:1;background:linear-gradient(155deg,#fff 0%,var(--glow) 45%,var(--cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-[data-theme="light"] .site-title{background:linear-gradient(155deg,#3b0764 0%,var(--accent) 45%,#0e7490 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.site-sub{font-size:1rem;font-weight:300;color:var(--sub);letter-spacing:.07em;margin-top:.7rem}
-.logo-area{margin-bottom:2.5rem}
-.stats-row{display:flex;gap:2.5rem;margin-bottom:2.2rem}
-.stat{text-align:center;position:relative}
-.stat-num{font-family:'Cairo Play',sans-serif;font-size:1.9rem;font-weight:900;color:var(--glow);line-height:1}
-.stat-label{font-size:.7rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-top:.3rem}
-.stat::after{content:'';position:absolute;top:50%;right:-1.4rem;transform:translateY(-50%);height:28px;width:1px;background:var(--muted);opacity:.3}
-.stat:last-child::after{display:none}
-.tags-section{margin-bottom:2rem}
-.tags-label{font-size:.75rem;color:var(--muted);letter-spacing:.1em;margin-bottom:.9rem;text-transform:uppercase}
-.tags-wrap{display:flex;flex-wrap:wrap;gap:.55rem;justify-content:center;max-width:480px}
-.tag{padding:.4rem 1rem;border-radius:50px;font-size:.85rem;border:1px solid var(--card-b);background:var(--card);color:var(--sub);cursor:pointer;transition:all .22s;user-select:none;backdrop-filter:blur(10px)}
-.tag:hover{border-color:rgba(167,139,250,.4);color:var(--glow);transform:translateY(-1px)}
-.tag.active{background:rgba(109,40,217,.2);border-color:var(--accent-b);color:var(--glow);box-shadow:0 0 14px rgba(109,40,217,.2)}
-.cta-wrap{display:flex;flex-direction:column;align-items:center;gap:.9rem}
-.btn-main{position:relative;padding:1rem 4rem;font-family:'Cairo Play',sans-serif;font-size:1.1rem;font-weight:700;color:#fff;border:none;border-radius:60px;cursor:pointer;background:linear-gradient(135deg,var(--accent) 0%,#9333ea 50%,var(--accent-b) 100%);background-size:200% 200%;animation:grad-s 4s ease infinite;box-shadow:0 0 40px rgba(109,40,217,.4),0 8px 32px rgba(0,0,0,.4);transition:transform .3s,box-shadow .3s;overflow:hidden}
-@keyframes grad-s{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
-.btn-main:hover{transform:translateY(-4px) scale(1.02);box-shadow:0 0 60px rgba(109,40,217,.55),0 16px 48px rgba(0,0,0,.5)}
-.btn-main:active{transform:scale(.97)}
-.btn-inner{position:relative;z-index:1;display:flex;align-items:center;gap:.7rem}
-.btn-dot{width:8px;height:8px;border-radius:50%;background:var(--online);box-shadow:0 0 8px var(--online);animation:blink 1.6s ease-in-out infinite;flex-shrink:0}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-.privacy-line{font-size:.73rem;color:var(--muted);display:flex;align-items:center;gap:.4rem}
-
-/* MATCHING */
-#screen-matching{gap:2rem}
-.match-visual{position:relative;width:200px;height:200px}
-.match-center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:5}
-.match-icon{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-b));display:flex;align-items:center;justify-content:center;font-size:1.5rem;box-shadow:0 0 30px rgba(109,40,217,.5)}
-.match-ring{position:absolute;border-radius:50%;border:1px solid rgba(167,139,250,.3);animation:mexp 2.5s ease-out infinite}
-.mr1{inset:30px;animation-delay:0s}.mr2{inset:10px;animation-delay:.6s}.mr3{inset:-10px;animation-delay:1.2s}.mr4{inset:-30px;animation-delay:1.8s}
-@keyframes mexp{0%{opacity:.5;transform:scale(.9)}100%{opacity:0;transform:scale(1.15)}}
-.match-sweep{position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,transparent 80%,rgba(109,40,217,.5) 100%);animation:sweep 1.8s linear infinite}
-@keyframes sweep{from{transform:rotate(0)}to{transform:rotate(360deg)}}
-.match-title{font-family:'Cairo Play',sans-serif;font-size:2rem;font-weight:800;color:var(--text);text-align:center}
-.match-sub{color:var(--sub);font-size:.9rem;text-align:center;animation:blink 1.6s infinite}
-.match-atags{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;max-width:300px}
-.atag{padding:.3rem .8rem;border-radius:50px;font-size:.78rem;background:rgba(109,40,217,.18);border:1px solid rgba(139,92,246,.4);color:var(--glow)}
-.btn-cancel{background:none;border:1px solid var(--muted);color:var(--muted);padding:.6rem 2rem;border-radius:50px;font-family:'Tajawal';font-size:.9rem;cursor:pointer;transition:all .22s}
-.btn-cancel:hover{border-color:var(--rose);color:var(--rose)}
-
-/* CHAT */
-#screen-chat{align-items:stretch;justify-content:flex-start}
-.chat-header{display:flex;align-items:center;justify-content:space-between;padding:.85rem 1.2rem;background:var(--header-bg);backdrop-filter:blur(24px);border-bottom:1px solid var(--card-b);flex-shrink:0;z-index:20;transition:background .4s}
-.peer-block{display:flex;align-items:center;gap:.9rem}
-.peer-ava{position:relative;width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--glow));display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
-.peer-ava::before{content:'';position:absolute;inset:-2px;border-radius:50%;background:conic-gradient(from 0deg,var(--accent),var(--glow),var(--cyan),var(--accent));z-index:-1;animation:sweep 4s linear infinite;opacity:.65}
-.peer-dot{position:absolute;bottom:2px;right:2px;width:10px;height:10px;border-radius:50%;background:var(--online);border:2px solid var(--bg);box-shadow:0 0 8px var(--online);animation:blink 2s infinite;transition:border-color .4s,background .3s}
-[data-theme="light"] .peer-dot{border-color:var(--bg2)}
-.peer-name{font-family:'Cairo Play',sans-serif;font-weight:700;font-size:.95rem;color:var(--text)}
-.peer-id-c{color:var(--glow)}
-.peer-stat{font-size:.72rem;color:var(--sub);margin-top:1px}
-.hbtns{display:flex;gap:.45rem}
-.hb{width:36px;height:36px;border-radius:50%;background:var(--card);border:1px solid var(--card-b);color:var(--sub);font-size:.95rem;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s}
-.hb:hover{background:var(--input-bg);color:var(--text)}
-.hb.red:hover{background:rgba(244,63,94,.15);border-color:rgba(244,63,94,.4);color:#fda4af}
-#msgs{flex:1;overflow-y:auto;padding:1.2rem 1rem;display:flex;flex-direction:column;gap:.4rem;background:linear-gradient(180deg,var(--bg2) 0%,var(--bg) 100%);transition:background .4s}
-#msgs::-webkit-scrollbar{width:3px}
-#msgs::-webkit-scrollbar-thumb{background:rgba(109,40,217,.3);border-radius:3px}
-.sys-pill{text-align:center;margin:.4rem auto;font-size:.72rem;color:var(--muted);background:var(--card);border:1px solid var(--card-b);border-radius:50px;padding:.3rem 1.1rem;max-width:280px;backdrop-filter:blur(10px)}
-.msg-row{display:flex;align-items:flex-end;gap:.5rem;animation:msg-in .3s cubic-bezier(.16,1,.3,1);max-width:80%}
-@keyframes msg-in{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
-.msg-row.me{align-self:flex-end;flex-direction:row-reverse}
-.msg-row.them{align-self:flex-start}
-.mini-av{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--glow));display:flex;align-items:center;justify-content:center;font-size:.8rem;flex-shrink:0;margin-bottom:18px}
-.msg-row.me .mini-av{background:linear-gradient(135deg,#0e7490,var(--cyan))}
-.msg-col{display:flex;flex-direction:column;max-width:100%}
-.bubble{padding:.7rem 1rem;border-radius:18px;font-size:.93rem;line-height:1.65;word-break:break-word}
-.them .bubble{background:var(--bubble-them);border:1px solid var(--bubble-b);border-bottom-right-radius:4px;color:var(--text)}
-.me .bubble{background:linear-gradient(135deg,var(--accent) 0%,#9333ea 100%);border-bottom-left-radius:4px;color:#fff;box-shadow:0 4px 18px rgba(109,40,217,.28)}
-.btime{font-size:.63rem;color:var(--muted);margin-top:3px;padding:0 3px}
-.me .btime{text-align:left}
-
-/* TYPING */
-#typing-area{display:none;padding:.2rem 1rem .3rem;flex-direction:row;align-items:center;gap:.5rem}
-.typing-dots{display:flex;gap:3px;align-items:center}
-.td{width:5px;height:5px;border-radius:50%;background:var(--sub);animation:tdb 1.4s ease-in-out infinite}
-.td:nth-child(2){animation-delay:.2s}.td:nth-child(3){animation-delay:.4s}
-@keyframes tdb{0%,60%,100%{transform:translateY(0);opacity:.5}30%{transform:translateY(-4px);opacity:1;background:var(--glow)}}
-.typing-label{font-size:.75rem;color:var(--sub);font-style:italic}
-
-/* FOOTER */
-.chat-footer{padding:.75rem 1rem;background:var(--footer-bg);backdrop-filter:blur(24px);border-top:1px solid var(--card-b);flex-shrink:0;transition:background .4s}
-.input-row{display:flex;align-items:flex-end;gap:.6rem}
-.emoji-panel{display:none;flex-wrap:wrap;gap:.4rem;padding:.7rem .3rem .5rem;border-bottom:1px solid var(--card-b);margin-bottom:.6rem;animation:sc-in .2s ease;max-height:110px;overflow-y:auto}
-.emoji-panel.open{display:flex}
-.ep-e{font-size:1.3rem;cursor:pointer;transition:transform .15s;padding:.15rem .25rem;border-radius:6px;background:none;border:none}
-.ep-e:hover{transform:scale(1.35);background:var(--card)}
-.input-box{flex:1;background:var(--input-bg);border:1px solid var(--input-b);border-radius:22px;padding:.7rem 1.1rem;color:var(--text);font-family:'Tajawal';font-size:.93rem;resize:none;outline:none;max-height:110px;overflow-y:auto;line-height:1.5;transition:border-color .2s,box-shadow .2s,background .4s;scrollbar-width:none}
-.input-box::placeholder{color:var(--muted)}
-.input-box:focus{border-color:rgba(109,40,217,.6);box-shadow:0 0 0 3px rgba(109,40,217,.1)}
-.emoji-toggle{width:40px;height:40px;border-radius:50%;background:var(--card);border:1px solid var(--card-b);color:var(--sub);font-size:1.1rem;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;flex-shrink:0}
-.emoji-toggle:hover{background:var(--input-bg);color:var(--text);transform:scale(1.08)}
-.emoji-toggle.open{background:rgba(109,40,217,.2);border-color:var(--accent-b);color:var(--glow)}
-.send-btn{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-b));border:none;color:#fff;font-size:1rem;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:transform .2s,box-shadow .2s;box-shadow:0 4px 14px rgba(109,40,217,.4)}
-.send-btn:hover{transform:scale(1.1);box-shadow:0 6px 22px rgba(109,40,217,.5)}
-.send-btn:active{transform:scale(.93)}
-.footer-info{display:flex;justify-content:space-between;align-items:center;margin-top:.45rem;padding:0 .2rem}
-.char-count{font-size:.67rem;color:var(--muted)}
-.quick-btns{display:flex;gap:.4rem}
-.qb{font-size:.7rem;padding:.2rem .65rem;border-radius:50px;background:var(--card);border:1px solid var(--card-b);color:var(--muted);cursor:pointer;transition:all .2s}
-.qb:hover{color:var(--text);border-color:var(--input-b)}
-
-/* DISCONNECTED */
-#screen-disc{text-align:center;padding:2rem}
-.disc-icon{font-size:4.5rem;margin-bottom:1.5rem;animation:wave .6s ease}
-@keyframes wave{from{transform:rotate(-20deg) scale(.5);opacity:0}60%{transform:rotate(15deg) scale(1.1)}to{transform:rotate(0) scale(1);opacity:1}}
-.disc-h{font-family:'Cairo Play',sans-serif;font-size:2rem;font-weight:900;color:var(--text);margin-bottom:.5rem}
-.disc-p{color:var(--sub);font-size:.9rem;max-width:260px;margin:0 auto 2rem;line-height:1.7}
-.disc-stats{display:flex;gap:2rem;margin-bottom:2.5rem;background:var(--card);border:1px solid var(--card-b);border-radius:20px;padding:1.1rem 2rem;backdrop-filter:blur(12px)}
-.ds{text-align:center}
-.ds-num{font-family:'Cairo Play',sans-serif;font-size:1.4rem;font-weight:900;color:var(--glow)}
-.ds-label{font-size:.68rem;color:var(--muted);margin-top:.2rem}
-.disc-btns{display:flex;gap:.9rem;flex-wrap:wrap;justify-content:center}
-.btn-next{padding:.85rem 2.2rem;font-family:'Cairo Play';font-size:.95rem;font-weight:700;color:#fff;border:none;border-radius:50px;background:linear-gradient(135deg,var(--accent),var(--accent-b));cursor:pointer;transition:all .3s;box-shadow:0 6px 22px rgba(109,40,217,.4)}
-.btn-next:hover{transform:translateY(-3px);box-shadow:0 12px 34px rgba(109,40,217,.5)}
-.btn-ghost{padding:.85rem 1.8rem;font-family:'Tajawal';font-size:.9rem;color:var(--sub);background:none;border:1px solid var(--muted);border-radius:50px;cursor:pointer;transition:all .22s}
-.btn-ghost:hover{color:var(--text);border-color:var(--sub)}
-
-/* CONNECTION STATUS */
-#conn-badge{position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);z-index:9000;padding:.4rem 1.1rem;border-radius:50px;font-size:.75rem;display:none;align-items:center;gap:.5rem;backdrop-filter:blur(12px);border:1px solid var(--card-b);background:rgba(15,12,30,.95);transition:all .3s}
-#conn-badge.show{display:flex}
-.cb-dot{width:7px;height:7px;border-radius:50%}
-
-/* TOASTS */
-#toast-area{position:fixed;top:1.2rem;left:50%;transform:translateX(-50%);z-index:9900;display:flex;flex-direction:column;gap:.4rem;pointer-events:none}
-.toast{background:rgba(15,12,30,.96);border:1px solid var(--card-b);backdrop-filter:blur(20px);border-radius:50px;padding:.55rem 1.3rem;font-size:.82rem;color:var(--text);white-space:nowrap;animation:ti .35s cubic-bezier(.16,1,.3,1) forwards}
-[data-theme="light"] .toast{background:rgba(240,238,255,.96)}
-.toast.out{animation:to .25s ease forwards}
-@keyframes ti{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
-@keyframes to{from{opacity:1}to{opacity:0;transform:translateY(-8px)}}
-.floater{position:fixed;font-size:1.8rem;pointer-events:none;z-index:500;animation:flu 1.4s ease forwards}
-@keyframes flu{from{opacity:1;transform:translateY(0) scale(1)}to{opacity:0;transform:translateY(-110px) scale(1.4)}}
-@media(max-width:480px){.stats-row{gap:1.4rem}.site-title{font-size:3.5rem}.msg-row{max-width:90%}.disc-stats{gap:1.2rem;padding:1rem 1.4rem}}
+#status{
+  margin-top:20px;
+  opacity:.7;
+}
 </style>
 </head>
 
 <body>
-<canvas id="starfield"></canvas>
-<div class="grain"></div>
-<div class="blob blob-1"></div>
-<div class="blob blob-2"></div>
 
-<button class="theme-btn" id="theme-btn" onclick="toggleTheme()">🌙</button>
-
-<div id="toast-area"></div>
-
-<div id="conn-badge">
-  <div class="cb-dot" id="cb-dot"></div>
-  <span id="cb-text">جاري الاتصال...</span>
-</div>
-
-<!-- LANDING -->
-<div class="screen active" id="screen-landing">
-  <div class="logo-area">
-    <div class="logo-wrap">
-      <div class="logo-ring lr1"></div><div class="logo-ring lr2"></div>
-      <div class="logo-bg"></div>
-      <div class="logo-face">👤</div>
-    </div>
-    <h1 class="site-title">مجهول</h1>
-    <p class="site-sub">دردش مع غريب — بلا هوية، بلا قيود</p>
-  </div>
-
-  <div class="stats-row">
-    <div class="stat"><div class="stat-num" id="stat-online">—</div><div class="stat-label">متصل الآن</div></div>
-    <div class="stat"><div class="stat-num" id="stat-chatting">—</div><div class="stat-label">في دردشة</div></div>
-    <div class="stat"><div class="stat-num">∞</div><div class="stat-label">لا حدود</div></div>
-  </div>
-
-  <div class="tags-section">
-    <div class="tags-label">اختر اهتماماتك (اختياري)</div>
-    <div class="tags-wrap">
-      <div class="tag" onclick="toggleTag(this)">🎮 ألعاب</div>
-      <div class="tag" onclick="toggleTag(this)">🎵 موسيقى</div>
-      <div class="tag" onclick="toggleTag(this)">📚 كتب</div>
-      <div class="tag" onclick="toggleTag(this)">🎬 أفلام</div>
-      <div class="tag" onclick="toggleTag(this)">💻 تقنية</div>
-      <div class="tag" onclick="toggleTag(this)">⚽ رياضة</div>
-      <div class="tag" onclick="toggleTag(this)">🎨 فن</div>
-      <div class="tag" onclick="toggleTag(this)">✈️ سفر</div>
-      <div class="tag" onclick="toggleTag(this)">🍕 طعام</div>
-      <div class="tag" onclick="toggleTag(this)">🧠 فلسفة</div>
-    </div>
-  </div>
-
-  <div class="cta-wrap">
-    <!-- ✅ زر ثابت -->
-    <button class="btn-main" id="startBtn" onclick="goMatching()">
-      <div class="btn-inner"><div class="btn-dot"></div><span>ابدأ المحادثة</span><span>←</span></div>
-    </button>
-    <div class="privacy-line">🔒 لا تسجيل · لا بيانات · مجهول تماماً</div>
-  </div>
-</div>
-
-<!-- MATCHING -->
-<div class="screen" id="screen-matching">
-  <div class="match-visual">
-    <div class="match-ring mr1"></div><div class="match-ring mr2"></div>
-    <div class="match-ring mr3"></div><div class="match-ring mr4"></div>
-    <div class="match-sweep"></div>
-    <div class="match-center"><div class="match-icon">👤</div></div>
-  </div>
-  <div style="text-align:center">
-    <div class="match-title">نبحث لك...</div>
-    <div class="match-sub" id="match-sub">جاري مسح الشبكة</div>
-  </div>
-  <div class="match-atags" id="match-atags"></div>
-  <button class="btn-cancel" onclick="goHome()">إلغاء</button>
-</div>
-
-<!-- CHAT -->
-<div class="screen" id="screen-chat" style="align-items:stretch;justify-content:flex-start">
-  <div class="chat-header">
-    <div class="peer-block">
-      <div class="peer-ava">
-        <span id="peer-emoji">👤</span>
-        <div class="peer-dot" id="peer-dot"></div>
-      </div>
-      <div>
-        <div class="peer-name">مجهول <span class="peer-id-c" id="peer-num">#0000</span></div>
-        <div class="peer-stat" id="peer-stat">⚡ متصل الآن</div>
-      </div>
-    </div>
-    <div class="hbtns">
-      <button class="hb" onclick="goNext()">🔀</button>
-      <button class="hb red" onclick="endConvo()">✕</button>
-    </div>
-  </div>
-
-  <div id="msgs"><div class="sys-pill">🔒 محادثة مشفرة · لا أحد يراها</div></div>
-
-  <div id="typing-area">
-    <div class="typing-dots"><div class="td"></div><div class="td"></div><div class="td"></div></div>
-    <span class="typing-label">جاري الكتابة...</span>
-  </div>
-
-  <div class="chat-footer">
-    <div class="emoji-panel" id="emoji-panel">
-      <button class="ep-e" onclick="ins('😊')">😊</button><button class="ep-e" onclick="ins('😂')">😂</button>
-      <button class="ep-e" onclick="ins('🔥')">🔥</button><button class="ep-e" onclick="ins('❤️')">❤️</button>
-      <button class="ep-e" onclick="ins('👋')">👋</button><button class="ep-e" onclick="ins('😎')">😎</button>
-      <button class="ep-e" onclick="ins('🤔')">🤔</button><button class="ep-e" onclick="ins('💯')">💯</button>
-      <button class="ep-e" onclick="ins('🎭')">🎭</button><button class="ep-e" onclick="ins('✨')">✨</button>
-      <button class="ep-e" onclick="ins('😅')">😅</button><button class="ep-e" onclick="ins('🙈')">🙈</button>
-      <button class="ep-e" onclick="ins('🌍')">🌍</button><button class="ep-e" onclick="ins('😍')">😍</button>
-      <button class="ep-e" onclick="ins('🥰')">🥰</button><button class="ep-e" onclick="ins('🤩')">🤩</button>
-      <button class="ep-e" onclick="ins('😴')">😴</button><button class="ep-e" onclick="ins('🙏')">🙏</button>
-      <button class="ep-e" onclick="ins('👏')">👏</button><button class="ep-e" onclick="ins('💪')">💪</button>
-      <button class="ep-e" onclick="ins('🎉')">🎉</button><button class="ep-e" onclick="ins('⭐')">⭐</button>
-    </div>
-
-    <div class="input-row">
-      <button class="emoji-toggle" id="etoggle" onclick="toggleEmoji()">＋</button>
-      <textarea class="input-box" id="msg-input" placeholder="اكتب رسالتك..." rows="1"
-        onkeydown="handleKey(event)" oninput="onInput(this)"></textarea>
-      <button class="send-btn" onclick="sendMsg()">➤</button>
-    </div>
-
-    <div class="footer-info">
-      <div class="char-count" id="char-count">0 / 500</div>
-      <div class="quick-btns">
-        <button class="qb" onclick="sendQuick('هلا! 👋')">هلا!</button>
-        <button class="qb" onclick="sendQuick('كيف حالك؟')">كيف حالك؟</button>
-        <button class="qb" onclick="sendQuick('من وين أنت؟')">من وين؟</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- DISCONNECTED -->
-<div class="screen" id="screen-disc">
-  <div class="disc-icon">👋</div>
-  <div class="disc-h">انتهت المحادثة</div>
-  <div class="disc-p">غادر المجهول... جرّب مجهولاً آخر!</div>
-  <div class="disc-stats">
-    <div class="ds"><div class="ds-num" id="disc-dur">0:00</div><div class="ds-label">مدة المحادثة</div></div>
-    <div class="ds"><div class="ds-num" id="disc-msgs">0</div><div class="ds-label">رسائل مُرسلة</div></div>
-  </div>
-  <div class="disc-btns">
-    <button class="btn-next" onclick="goMatching()">🔍 مجهول جديد</button>
-    <button class="btn-ghost" onclick="goHome()">🏠 الرئيسية</button>
-  </div>
+<div style="text-align:center">
+  <h1>مجهول +</h1>
+  <button onclick="start()">ابدأ المحادثة</button>
+  <div id="status">غير متصل</div>
 </div>
 
 <script>
-/* ─── STARFIELD ─── */
-const canvas=document.getElementById('starfield'),ctx=canvas.getContext('2d');let stars=[];
-function initC(){canvas.width=innerWidth;canvas.height=innerHeight;stars=Array.from({length:110},()=>({x:Math.random()*canvas.width,y:Math.random()*canvas.height,r:Math.random()*1.1+.2,a:Math.random()*Math.PI*2,speed:Math.random()*.003+.001,drift:(Math.random()-.5)*.04}))}
-function drawS(){ctx.clearRect(0,0,canvas.width,canvas.height);stars.forEach(s=>{s.a+=s.speed;s.x+=s.drift;if(s.x>canvas.width)s.x=0;if(s.x<0)s.x=canvas.width;const al=(Math.sin(s.a)+1)/2*.55+.08;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=`rgba(167,139,250,${al})`;ctx.fill()});requestAnimationFrame(drawS)}
-initC();drawS();window.addEventListener('resize',initC);
+const socket = io();
 
-/* ─── THEME ─── */
-let theme=localStorage.getItem('mjTheme')||'dark';
-function applyTheme(){document.documentElement.setAttribute('data-theme',theme==='light'?'light':'');document.getElementById('theme-btn').textContent=theme==='light'?'🌙':'☀️';localStorage.setItem('mjTheme',theme)}
-function toggleTheme(){theme=theme==='dark'?'light':'dark';applyTheme();showToast(theme==='light'?'☀️ السمة الفاتحة':'🌙 السمة الداكنة')}
-applyTheme();
-
-/* ─── SOCKET.IO (Railway-friendly) ─── */
-const socket = io({
-  path: "/socket.io",
-  transports: ["websocket","polling"],
-  reconnectionAttempts: 10,
-  reconnectionDelay: 1200,
+socket.on("connect",()=>{
+  document.getElementById("status").innerText="متصل بالسيرفر";
 });
 
-socket.on('connect',()=>{
-  showConnBadge('🟢','متصل بالسيرفر',true);
-  setTimeout(hideConnBadge,2000);
-  fetchStats();
+socket.on("disconnect",()=>{
+  document.getElementById("status").innerText="انقطع الاتصال";
 });
 
-socket.on('disconnect',()=>showConnBadge('🔴','انقطع الاتصال... يُعاد',false));
-socket.on('connect_error',(e)=> {
-  console.log("connect_error:", e?.message || e);
-  showConnBadge('🟡','مشكلة في الاتصال',false);
-});
-
-/* STATS من السيرفر */
-socket.on('stats:update',data=>{
-  const oe=document.getElementById('stat-online');
-  const ce=document.getElementById('stat-chatting');
-  if(oe)oe.textContent=data?.online ?? 0;
-  if(ce)ce.textContent=data?.chatting ?? 0;
-});
-
-async function fetchStats(){
-  try{
-    const r=await fetch('/api/stats');
-    const d=await r.json();
-    document.getElementById('stat-online').textContent=d.online||0;
-    document.getElementById('stat-chatting').textContent=d.chatting||0;
-  }catch(e){}
-}
-
-/* MATCHING */
-socket.on('waiting',()=>{
-  const el=document.getElementById('match-sub');
-  if(el) el.textContent='في قائمة الانتظار... ⏳';
-});
-
-socket.on('matched',({peerId}={})=>{
-  if(!peerId) peerId = "0000";
-  connectChat(peerId);
-});
-
-/* MESSAGES */
-socket.on('message:receive',({text}={})=>{
-  if(typeof text === 'string' && text.trim()) addMsg('them',text.trim());
-});
-
-/* TYPING */
-socket.on('typing:start',()=>showTypingIndicator());
-socket.on('typing:stop',()=>hideTypingIndicator());
-
-/* PARTNER LEFT */
-socket.on('partner:left',()=>{
-  addSys('👋 غادر المجهول المحادثة');
-  const ps=document.getElementById('peer-stat');
-  if(ps) ps.textContent='غير متصل';
-  const dot=document.getElementById('peer-dot');
-  if(dot) dot.style.background='#6b7280';
-
-  setTimeout(()=>{
-    const dur=chatStart?Math.floor((Date.now()-chatStart)/1000):0;
-    const m=Math.floor(dur/60),s=dur%60;
-    document.getElementById('disc-dur').textContent=`${m}:${String(s).padStart(2,'0')}`;
-    document.getElementById('disc-msgs').textContent=msgCount;
-    showScreen('screen-disc');
-  },700);
-});
-
-/* SERVER SHUTDOWN */
-socket.on('server:shutdown',({message}={})=>showToast('⚠️ '+(message||'السيرفر سيتم إعادة تشغيله'),5000));
-
-/* ERROR */
-socket.on('error:ratelimit',({message}={})=>showToast('⏳ '+(message||'تم تقييد الإرسال')));
-socket.on('error:nopartner',({message}={})=>showToast('❗ '+(message||'لست في محادثة')));
-
-/* ─── STATE ─── */
-let state='landing',msgCount=0,chatStart=null;
-const peerEmojis=['👤','🎭','👻','🤖','🦊','🐺','👁️','🌒','🧩','🎪'];
-let typingTimer=null;
-
-/* ─── NAVIGATION ─── */
-function goHome(){
-  state='landing';
-  try { socket.emit('chat:end'); } catch {}
-  clearInterval(socket._matchTxtTimer);
-  showScreen('screen-landing');
-}
-
-function goMatching(){
-  state='matching';
-  msgCount=0; chatStart=null;
-
-  showScreen('screen-matching');
-  closeEmoji();
-
-  const tags=getActiveTags();
-  const at=document.getElementById('match-atags');
-  if(at) at.innerHTML=tags.length?tags.map(t=>`<div class="atag">${t}</div>`).join(''):'';
-
-  const texts=['جاري مسح الشبكة','نبحث بين المتصلين','شارف على الاتصال...'];
-  let ti=0;const sub=document.getElementById('match-sub');
-  clearInterval(socket._matchTxtTimer);
-  socket._matchTxtTimer=setInterval(()=>{ti=(ti+1)%texts.length;if(sub)sub.textContent=texts[ti]},1300);
-
-  // ✅ السيرفر عندك ما يحتاج payload أصلاً، بس ما يضر
-  socket.emit('find:partner', { tags });
-}
-
-function connectChat(peerId){
-  clearInterval(socket._matchTxtTimer);
-
-  state='chat';
-  msgCount=0;
-  chatStart=Date.now();
-
-  const emoji=peerEmojis[Math.floor(Math.random()*peerEmojis.length)];
-  document.getElementById('peer-emoji').textContent=emoji;
-  document.getElementById('peer-num').textContent='#'+peerId;
-  document.getElementById('peer-stat').textContent='⚡ متصل الآن';
-  document.getElementById('peer-dot').style.background='var(--online)';
-
-  document.getElementById('msgs').innerHTML='<div class="sys-pill">🔒 محادثة مشفرة · لا أحد يراها</div>';
-  addSys(`✅ تم الاتصال بمجهول #${peerId}`);
-
-  showScreen('screen-chat');
-  showToast('🟢 تم الاتصال!');
-  setTimeout(()=>document.getElementById('msg-input').focus(),350);
-}
-
-function goNext(){
-  addSys('🔀 بحث عن شخص جديد...');
-  showScreen('screen-matching');
-  socket.emit('find:partner', { tags:getActiveTags() });
-}
-
-function endConvo(){
-  try { socket.emit('chat:end'); } catch {}
-  state='disc';
-  const dur=chatStart?Math.floor((Date.now()-chatStart)/1000):0;
-  const m=Math.floor(dur/60),s=dur%60;
-  document.getElementById('disc-dur').textContent=`${m}:${String(s).padStart(2,'0')}`;
-  document.getElementById('disc-msgs').textContent=msgCount;
-  showScreen('screen-disc');
-}
-
-/* ─── MESSAGES ─── */
-function sendMsg(){
-  const inp=document.getElementById('msg-input');
-  let txt=inp.value.trim();
-  if(!txt||state!=='chat')return;
-
-  if(txt.length>500) txt=txt.slice(0,500);
-
-  socket.emit('message:send',{text:txt});
-  addMsg('me',txt);
-
-  inp.value='';
-  inp.style.height='auto';
-  document.getElementById('char-count').textContent='0 / 500';
-
-  msgCount++;
-  closeEmoji();
-  socket.emit('typing:stop');
-}
-
-function sendQuick(txt){if(state!=='chat')return;document.getElementById('msg-input').value=txt;onInput(document.getElementById('msg-input'));sendMsg()}
-
-function addMsg(who,text){
-  const msgs=document.getElementById('msgs');
-  const row=document.createElement('div');row.className=`msg-row ${who}`;
-  const av=document.createElement('div');av.className='mini-av';
-  av.textContent=who==='them'?document.getElementById('peer-emoji').textContent:'🧑';
-  const col=document.createElement('div');col.className='msg-col';
-  const bub=document.createElement('div');bub.className='bubble';bub.textContent=text;
-  const bt=document.createElement('div');bt.className='btime';bt.textContent=getTime();
-  col.appendChild(bub);col.appendChild(bt);row.appendChild(av);row.appendChild(col);
-  msgs.appendChild(row);msgs.scrollTop=msgs.scrollHeight;
-  if(who==='them')bub.addEventListener('dblclick',()=>spawnFloat('❤️',bub));
-}
-
-function addSys(text){
-  const msgs=document.getElementById('msgs');
-  const d=document.createElement('div');d.className='sys-pill';d.textContent=text;
-  msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;
-}
-
-function showTypingIndicator(){document.getElementById('typing-area').style.display='flex';document.getElementById('msgs').scrollTop=9999}
-function hideTypingIndicator(){document.getElementById('typing-area').style.display='none'}
-
-/* ─── INPUT ─── */
-function handleKey(e){
-  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();return}
-
-  if(state==='chat'){
-    socket.emit('typing:start');
-    clearTimeout(typingTimer);
-    typingTimer=setTimeout(()=>socket.emit('typing:stop'),1200);
-  }
-}
-
-function onInput(el){
-  // قص أولاً قبل حساب العداد
-  if(el.value.length>500) el.value = el.value.slice(0,500);
-
-  el.style.height='auto';
-  el.style.height=Math.min(el.scrollHeight,110)+'px';
-
-  const len=el.value.length;
-  document.getElementById('char-count').textContent=`${len} / 500`;
-}
-
-/* ─── EMOJI ─── */
-function toggleEmoji(){
-  const p=document.getElementById('emoji-panel');
-  const btn=document.getElementById('etoggle');
-  const open=p.classList.toggle('open');
-  btn.classList.toggle('open',open);
-  btn.textContent=open?'✕':'＋';
-}
-function closeEmoji(){
-  document.getElementById('emoji-panel').classList.remove('open');
-  const btn=document.getElementById('etoggle');
-  btn.classList.remove('open');
-  btn.textContent='＋';
-}
-function ins(e){
-  const inp=document.getElementById('msg-input');
-  inp.value += e;
-  onInput(inp);
-  inp.focus();
-}
-
-/* ─── TAGS ─── */
-function toggleTag(el){el.classList.toggle('active')}
-function getActiveTags(){return[...document.querySelectorAll('.tag.active')].map(t=>t.textContent.trim())}
-
-/* ─── SCREENS ─── */
-function showScreen(id){
-  document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('active');s.style.display='none'});
-  const t=document.getElementById(id);
-  t.style.display='flex';
-  requestAnimationFrame(()=>t.classList.add('active'));
-}
-
-/* ─── CONNECTION BADGE ─── */
-function showConnBadge(icon,text,good){
-  const b=document.getElementById('conn-badge');
-  const dot=document.getElementById('cb-dot');
-  document.getElementById('cb-text').textContent = `${icon} ${text}`;
-  dot.style.background = good ? 'var(--online)' : 'var(--rose)';
-  b.classList.add('show');
-}
-function hideConnBadge(){document.getElementById('conn-badge').classList.remove('show')}
-
-/* ─── TOASTS ─── */
-function showToast(msg,dur=2800){
-  const area=document.getElementById('toast-area');
-  const t=document.createElement('div');t.className='toast';t.textContent=msg;area.appendChild(t);
-  setTimeout(()=>{t.classList.add('out');setTimeout(()=>t.remove(),300)},dur);
-}
-
-/* ─── FLOATER ─── */
-function spawnFloat(emoji,anchor){
-  const rect=anchor.getBoundingClientRect();
-  const f=document.createElement('div');f.className='floater';f.textContent=emoji;
-  f.style.left=(rect.left+rect.width/2-15)+'px';
-  f.style.top=(rect.top-10)+'px';
-  document.body.appendChild(f);
-  setTimeout(()=>f.remove(),1400);
-}
-
-/* ─── UTILS ─── */
-function getTime(){
-  return new Date().toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit'});
+function start(){
+  alert("تم الضغط — الآن نكمل بناء التطبيق");
 }
 </script>
+
+<!-- SERVICE WORKER -->
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sw.js");
+}
+</script>
+
 </body>
 </html>
