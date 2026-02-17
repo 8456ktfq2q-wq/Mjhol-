@@ -142,7 +142,9 @@ app.get('/api/stats', (req, res) => res.json(getStats()));
 app.get('/health', (req, res) => res.json({ status: 'ok', ...getStats() }));
 
 // مهم جداً لـ Railway
-app.get('/', (req, res) => res.status(200).send('OK'));
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 // SOCKET EVENTS
 io.on('connection', (socket) => {
